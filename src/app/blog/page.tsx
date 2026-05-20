@@ -91,6 +91,7 @@ export default function BlogPage() {
           {BLOGS_PAGE_DATA.map((blog) => (
             <BlogCard
               key={blog.id}
+              id={blog.id}
               image={blog.image}
               date={blog.date}
               category={blog.category}
