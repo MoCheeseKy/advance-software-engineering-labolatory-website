@@ -4,31 +4,31 @@ import ActivityCard from './ActivityCard';
 const activities = [
   {
     title: 'Study Group',
-    imageSrc: '/images/activities/study-group.svg',
+    imageSrc: '/Images/activities/study-group.svg',
     description:
       'Tempat belajar dan diskusi bareng tentang Software Engineering dan Game Development, sekaligus praktek langsung guna memperdalam materi yang dipelajari',
   },
   {
     title: 'Open Project',
-    imageSrc: '/images/activities/open-project.svg',
+    imageSrc: '/Images/activities/open-project.svg',
     description:
       'Proyek open source yang terbuka untuk seluruh member ASE, bertujuan mempererat kerja sama dan meningkatkan keterampilan melalui pengembangan proyek nyata',
   },
   {
     title: 'BondASE',
-    imageSrc: '/images/activities/bond-ase.svg',
+    imageSrc: '/Images/activities/bond-ase.svg',
     description:
       'Acara spesial yang mengajak seluruh anggota ASE untuk berpartisipasi dalam kegiatan menyenangkan dan penuh keakraban, guna membangun hubungan lebih erat dan solid antar member',
   },
   {
     title: 'Research Group',
-    imageSrc: '/images/activities/research-group.svg',
+    imageSrc: '/Images/activities/research-group.svg',
     description:
       'Wadah kolaborasi untuk mengeksplorasi dan meneliti inovasi teknologi terbaru di bidang Software Engineering, berfokus pada analisis mendalam hingga penciptaan solusi berbasis riset.',
   },
   {
     title: 'Internship',
-    imageSrc: '/images/activities/internship.svg',
+    imageSrc: '/Images/activities/internship.svg',
     description:
       'Proses seleksi anggota ASE yang dimulai dari seleksi dokumen dan wawancara. Peserta terpilih akan dibagi menjadi kelompok kecil (3-5 orang) untuk mengerjakan proyek aplikasi atau game.',
   },

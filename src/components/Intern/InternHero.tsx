@@ -7,7 +7,7 @@ export default function InternHero() {
   return (
     <section
       className='relative w-full h-[calc(100vh-81px)] bg-cover bg-center flex items-center'
-      style={{ backgroundImage: `url('/images/ase-group-photo-1.svg')` }}
+      style={{ backgroundImage: `url('/Images/ase-group-photo-1.svg')` }}
     >
       {/* Black overlay */}
       <div className='absolute inset-0 bg-black/75 z-0' />

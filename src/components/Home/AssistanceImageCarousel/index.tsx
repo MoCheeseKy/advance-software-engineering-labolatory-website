@@ -7,16 +7,16 @@ interface Assistant {
 }
 
 const assistants: Assistant[] = [
-  { name: 'Hafizh', image: '/images/labolatory-assistance/hafizh.svg' },
-  { name: 'Deswita', image: '/images/labolatory-assistance/deswiita.svg' },
-  { name: 'Nadya', image: '/images/labolatory-assistance/nadya.svg' },
-  { name: 'Rifky', image: '/images/labolatory-assistance/rifky.svg' },
-  { name: 'Yappier', image: '/images/labolatory-assistance/yappier.svg' },
-  { name: 'Alvin', image: '/images/labolatory-assistance/alvin.svg' },
-  { name: 'Edsel', image: '/images/labolatory-assistance/edsel.svg' },
-  { name: 'Gavin', image: '/images/labolatory-assistance/gavin.svg' },
-  { name: 'Gillbrian', image: '/images/labolatory-assistance/gillbrian.svg' },
-  { name: 'Zhafran', image: '/images/labolatory-assistance/zhafran.svg' },
+  { name: 'Hafizh', image: '/Images/labolatory-assistance/hafizh.svg' },
+  { name: 'Deswita', image: '/Images/labolatory-assistance/deswiita.svg' },
+  { name: 'Nadya', image: '/Images/labolatory-assistance/nadya.svg' },
+  { name: 'Rifky', image: '/Images/labolatory-assistance/rifky.svg' },
+  { name: 'Yappier', image: '/Images/labolatory-assistance/yappier.svg' },
+  { name: 'Alvin', image: '/Images/labolatory-assistance/alvin.svg' },
+  { name: 'Edsel', image: '/Images/labolatory-assistance/edsel.svg' },
+  { name: 'Gavin', image: '/Images/labolatory-assistance/gavin.svg' },
+  { name: 'Gillbrian', image: '/Images/labolatory-assistance/gillbrian.svg' },
+  { name: 'Zhafran', image: '/Images/labolatory-assistance/zhafran.svg' },
 ];
 
 export default function AssistanceImageCarousel() {

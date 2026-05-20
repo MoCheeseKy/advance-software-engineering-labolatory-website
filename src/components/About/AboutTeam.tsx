@@ -3,16 +3,16 @@ import Wrapper from '@/components/_shared/Wrapper';
 
 export default function AboutTeam() {
   const assistants = [
-    { name: 'Zhafran', src: '/images/labolatory-assistance/zhafran.svg' },
-    { name: 'Hafizh', src: '/images/labolatory-assistance/hafizh.svg' },
-    { name: 'Deswita', src: '/images/labolatory-assistance/deswiita.svg' },
-    { name: 'Nadya', src: '/images/labolatory-assistance/nadya.svg' },
-    { name: 'Rifky', src: '/images/labolatory-assistance/rifky.svg' },
-    { name: 'Yappier', src: '/images/labolatory-assistance/yappier.svg' },
-    { name: 'Alvin', src: '/images/labolatory-assistance/alvin.svg' },
-    { name: 'Edsel', src: '/images/labolatory-assistance/edsel.svg' },
-    { name: 'Gavin', src: '/images/labolatory-assistance/gavin.svg' },
-    { name: 'Gillbrian', src: '/images/labolatory-assistance/gillbrian.svg' },
+    { name: 'Zhafran', src: '/Images/labolatory-assistance/zhafran.svg' },
+    { name: 'Hafizh', src: '/Images/labolatory-assistance/hafizh.svg' },
+    { name: 'Deswita', src: '/Images/labolatory-assistance/deswiita.svg' },
+    { name: 'Nadya', src: '/Images/labolatory-assistance/nadya.svg' },
+    { name: 'Rifky', src: '/Images/labolatory-assistance/rifky.svg' },
+    { name: 'Yappier', src: '/Images/labolatory-assistance/yappier.svg' },
+    { name: 'Alvin', src: '/Images/labolatory-assistance/alvin.svg' },
+    { name: 'Edsel', src: '/Images/labolatory-assistance/edsel.svg' },
+    { name: 'Gavin', src: '/Images/labolatory-assistance/gavin.svg' },
+    { name: 'Gillbrian', src: '/Images/labolatory-assistance/gillbrian.svg' },
   ];
 
   return (
@@ -25,7 +25,7 @@ export default function AboutTeam() {
           </h2>
           <div className='flex justify-center'>
             <img
-              src='/images/labolatory-assistance/fadhil.svg'
+              src='/Images/labolatory-assistance/fadhil.svg'
               alt='Fadil Al Afgani'
               className='w-full max-w-[200px] h-auto rounded-[20px] shadow-md hover:scale-[1.03] transition-transform duration-300'
             />

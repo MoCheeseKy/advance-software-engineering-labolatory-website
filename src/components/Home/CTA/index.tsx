@@ -8,7 +8,7 @@ export default function CTA() {
       <Wrapper>
         <div
           className='relative w-full rounded-[24px] md:rounded-[32px] overflow-hidden bg-cover bg-center py-16 px-6 md:py-20 md:px-16 shadow-lg'
-          style={{ backgroundImage: `url('/images/ase-group-photo-1.svg')` }}
+          style={{ backgroundImage: `url('/Images/ase-group-photo-1.svg')` }}
         >
           {/* Transparent black overlay to make bg darker */}
           <div className='absolute inset-0 bg-black/70 z-0' />
