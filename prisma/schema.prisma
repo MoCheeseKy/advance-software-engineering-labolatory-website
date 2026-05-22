@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+datasource db {
+  provider = "postgresql" 
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Fakultas {
+  id_fakultas Int      @id @default(autoincrement())
+  nama        String
+  
+  prodi       Prodi[]
+  divisi      Divisi[]
+
+  @@map("fakultas")
+}
+
+model Prodi {
+  id_prodi    Int          @id @default(autoincrement())
+  id_fakultas Int
+  nama        String
+
+  fakultas    Fakultas     @relation(fields: [id_fakultas], references: [id_fakultas])
+
+  registrasi  Registrasi[]
+
+  @@map("prodi") 
+}
+
+model Divisi {
+  id_divisi   Int          @id @default(autoincrement())
+  id_fakultas Int
+  nama        String
+  
+  fakultas    Fakultas     @relation(fields: [id_fakultas], references: [id_fakultas])
+  
+  dataDivisi  DataDivisi[]
+
+  @@map("divisi")
+}
+
+model Registrasi {
+  id_registrasi    Int      @id @default(autoincrement())
+  id_prodi         Int
+  nim              String   
+  nama             String
+  angkatan         Int
+  cv               String   @db.Text
+  motivationLetter String   @map("motivation-letter") @db.Text
+  portofolio       String   @db.Text
+  status           Boolean
+  
+  prodi            Prodi    @relation(fields: [id_prodi], references: [id_prodi])
+  
+  dataDivisi       DataDivisi[]
+
+  @@map("registrasi")
+}
+
+model DataDivisi {
+  id_divisi   Int
+  id_register Int
+  pilihan     Int    
+
+  divisi      Divisi     @relation(fields: [id_divisi], references: [id_divisi])
+  registrasi  Registrasi @relation(fields: [id_register], references: [id_registrasi])
+
+  @@id([id_divisi, id_register])
+  @@map("datadivisi")
+}
+
