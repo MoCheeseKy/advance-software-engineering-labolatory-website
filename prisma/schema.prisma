@@ -16,7 +16,6 @@ model Fakultas {
   nama        String
   
   prodi       Prodi[]
-  divisi      Divisi[]
 
   @@map("fakultas")
 }
@@ -35,10 +34,7 @@ model Prodi {
 
 model Divisi {
   id_divisi   Int          @id @default(autoincrement())
-  id_fakultas Int
   nama        String
-  
-  fakultas    Fakultas     @relation(fields: [id_fakultas], references: [id_fakultas])
   
   dataDivisi  DataDivisi[]
 
