@@ -99,13 +99,29 @@ export default function InternRegisterPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const result = fetch('/api/registrasi', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },  
-      body: JSON.stringify(form),
-    });
-  
-    setSubmitted(true);
+    const payload = {
+      nim: form.nim,
+      nama: form.nama,
+      nama_prodi: form.programStudi,
+      angkatan: form.angkatan,
+      cv: form.linkCV,
+      motivationLetter: form.linkMotivation,
+      portofolio: form.linkPortofolio,
+      id_divisi_1: form.divisi1,
+      id_divisi_2: form.divisi2,
+    }
+    try { 
+        const response = fetch('/api/registrasi', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },  
+          body: JSON.stringify(payload),
+      });
+      setSubmitted(true);
+      
+    } catch (error) {
+        console.error("Error submitting form: ", error);
+    }
+    
   };
 
   // Array for Options Selections

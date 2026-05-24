@@ -22,7 +22,6 @@ async function main() {
         { id_fakultas: 5,nama: 'Fakultas Komunikasi Sosial' },
         { id_fakultas: 6,nama: 'Fakultas Industri Kreatif' },
         { id_fakultas: 7,nama: 'Fakultas Ilmu Terapan' },
-        { id_fakultas: 8,nama: 'Fakultas Kedokteran' },
     ];
 
     const finishedFakultas = await prisma.fakultas.createMany({
