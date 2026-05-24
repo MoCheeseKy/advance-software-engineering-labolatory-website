@@ -8,7 +8,7 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
     console.log('Seeding database...');
 
-    // Clear existing data
+    // Clear existing data on table prodi, fakultas, and divisi
     await prisma.prodi.deleteMany();
     await prisma.fakultas.deleteMany();
     await prisma.divisi.deleteMany();
@@ -131,10 +131,10 @@ async function main() {
         skipDuplicates: true,
     });
 
-
     console.log(`Seeded ${finishedProdi.count} prodi.`);
 }
 
+// Execute the main function and handle errors
 main()
     .catch((e) => {
         console.error(e);

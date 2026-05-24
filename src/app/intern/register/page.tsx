@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -15,27 +15,11 @@ import {
 
 import Wrapper from '@/components/_shared/Wrapper';
 
-const DIVISIONS = [
-  'System Analyst',
-  'Quality Assurance',
-  'Backend Development',
-  'Frontend Development',
-  'Mobile Development',
-  'Game Programming',
-  'Game Design',
-  'Game Artist',
-  'UI/UX Design',
-  'Audio Composer',
-];
-
-const FAKULTAS_OPTIONS = [
-  'Fakultas Informatika',
-  'Fakultas Rekayasa Industri',
-  'Fakultas Ekonomi dan Bisnis',
-  'Fakultas Komunikasi dan Desain',
-  'Fakultas Industri Kreatif',
-  'Lainnya',
-];
+type MasterData = {
+  fakultas: { id_fakultas: number; nama: string }[];
+  divisi: { id_divisi: number; nama: string }[];
+  prodi: { id_prodi: number; nama: string; id_fakultas: number }[];
+}
 
 type FormState = {
   nim: string;
@@ -66,22 +50,81 @@ const initialForm: FormState = {
 export default function InternRegisterPage() {
   const [form, setForm] = useState<FormState>(initialForm);
   const [submitted, setSubmitted] = useState(false);
+  
+  const [masterData, setMasterData] = useState<MasterData>({
+    fakultas: [],
+    divisi: [],
+    prodi: [],
+  });
+
+  // For Fetcthing Fakultas, Divisi, and Prodi Data
+  useEffect(() => {
+    const fetchMasterData = async () => {
+      try {
+        const response = await fetch('/api/fakultas');
+        const result = await response.json();
+
+        console.log("Cek Hasil dari API Master Data: ", result);
+
+        if (result.success) {
+          setMasterData({
+            fakultas: result.data.fakultas,
+            divisi: result.data.divisi,
+            prodi: result.data.prodi,
+          });
+        } 
+      } catch (error) {
+        console.error("Error fetching master data: ", error);
+      }
+    };
+    fetchMasterData();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
 
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setForm((prev) => {
+      const updatedForm = { ...prev, [name]: value };
+
+      if (name === 'fakultas') {
+        updatedForm.programStudi = '';
+      }
+
+      return updatedForm;
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const result = fetch('/api/registrasi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },  
+      body: JSON.stringify(form),
+    });
+  
     setSubmitted(true);
   };
+
+  // Array for Options Selections
+  const  divisiOptions = masterData.divisi.map((d) => ({
+    value: d.id_divisi.toString(),
+    label: d.nama,
+  }))
+
+  const fakultasOptions = masterData.fakultas.map((f) => ({
+    value: f.id_fakultas.toString(),
+    label: f.nama,
+  }))
+
+  const prodiOptions = masterData.prodi
+    .filter((p) => p.id_fakultas.toString() === form.fakultas)
+    .map((p) => ({
+      value: p.nama,
+      label: p.nama,
+    }))
 
   if (submitted) {
     return (
@@ -242,15 +285,15 @@ export default function InternRegisterPage() {
                         name='fakultas'
                         value={form.fakultas}
                         onChange={handleChange}
-                        options={FAKULTAS_OPTIONS}
+                        options={fakultasOptions}
                         required
                       />
 
-                      <FormField
+                      <SelectField
                         label='Program Studi'
                         name='programStudi'
-                        placeholder='Contoh: S1 Informatika'
                         value={form.programStudi}
+                        options={prodiOptions}
                         onChange={handleChange}
                         required
                       />
@@ -278,7 +321,7 @@ export default function InternRegisterPage() {
                         name='divisi1'
                         value={form.divisi1}
                         onChange={handleChange}
-                        options={DIVISIONS}
+                        options={divisiOptions}
                         required
                       />
 
@@ -287,7 +330,7 @@ export default function InternRegisterPage() {
                         name='divisi2'
                         value={form.divisi2}
                         onChange={handleChange}
-                        options={DIVISIONS}
+                        options={divisiOptions}
                         required
                       />
                     </div>
@@ -478,7 +521,7 @@ interface SelectFieldProps {
   name: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  options: string[];
+  options: { value: string; label: string }[];
   required?: boolean;
 }
 
@@ -532,8 +575,8 @@ function SelectField({
           </option>
 
           {options.map((option) => (
-            <option key={option} value={option}>
-              {option}
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </select>
