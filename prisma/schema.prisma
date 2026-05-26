@@ -71,3 +71,13 @@ model DataDivisi {
   @@map("datadivisi")
 }
 
+model Admin {
+  id_admin  Int         @id @default(autoincrement())
+  email     String      @unique
+  username  String      @unique
+  password  String       
+  role      String      @default("admin")
+
+  @@map("admin")
+}
+
