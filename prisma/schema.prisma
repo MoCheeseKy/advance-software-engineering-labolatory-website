@@ -78,6 +78,39 @@ model Admin {
   password  String       
   role      String      @default("admin")
 
+  blog      Blog[]
+  product   Product[]
+
   @@map("admin")
 }
 
+model Blog{
+  id_blog   Int         @id @default(autoincrement())
+  id_admin  Int
+  title     String
+  authors   String[]
+  url       String      @unique
+  texts     String[]    
+  images    String[]  
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  admin     Admin       @relation(fields:[id_admin], references:[id_admin])
+  
+  @@map("blog")
+}
+
+model Product{
+  id_product    Int     @id @default(autoincrement())
+  id_admin      Int 
+  name          String
+  developers    String[]
+  texts         String[]
+  images        String[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  admin         Admin    @relation(fields:[id_admin], references:[id_admin])
+
+  @@map("product")
+}
