@@ -1,0 +1,46 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+    try {
+        const { id } = await params;
+        const id_blog = Number(id);
+        const body = await request.json();
+
+        const { title, authors, url, texts, images } = body;
+
+        const updatedBlog = await prisma.blog.update({
+            where: { id_blog },
+            data: {
+                ...(title && { title }),
+                ...(authors && { authors }),
+                ...(url && { url }),
+                ...(texts && { texts }),
+                ...(images && { images }),
+            }
+        });
+
+        return NextResponse.json({message: "Blog updated successfully", data: updatedBlog}, {status: 200});
+
+    } catch (error) {
+        console.error("Error updating blog:", error);
+        return NextResponse.json({message: "Error updating blog"}, {status: 500});
+    }
+} 
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+    try {
+        const { id } = await params;
+        const id_blog = Number(id);
+
+        const deletedBlog = await prisma.blog.delete({
+            where: { id_blog }
+        });
+
+        return NextResponse.json({message: "Blog deleted successfully", data: deletedBlog}, {status: 200});
+
+    } catch (error) {
+        console.error("Error deleting blog:", error);
+        return NextResponse.json({message: "Error deleting blog"}, {status: 500});
+    }
+} 
