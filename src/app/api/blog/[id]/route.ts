@@ -1,8 +1,16 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { cookies } from 'next/headers';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const cookie = await cookies();
+        const session = cookie.get('session')?.value;
+
+        if (!session) {
+            return NextResponse.json({message: "Unauthorized"}, {status: 401});
+        }
+
         const { id } = await params;
         const id_blog = Number(id);
         const body = await request.json();
@@ -30,6 +38,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const cookie = await cookies();
+        const session = cookie.get('session')?.value;
+
+        if (!session) {
+            return NextResponse.json({message: "Unauthorized"}, {status: 401});
+        }
+        
         const { id } = await params;
         const id_blog = Number(id);
 
