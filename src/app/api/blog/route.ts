@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 
+// GET function to fetch all blog posts
 export async function GET() {
     try {
+        // Fetch blogs from the database, ordered by creation date
         const blogs = await prisma.blog.findMany({
             orderBy: {
                 createdAt: 'desc',
@@ -23,18 +25,22 @@ export async function GET() {
     }
 }
 
+// POST function to create a new blog post
 export async function POST(request: Request) {
     try {
+        // Authentication check
         const cookie = await cookies();
         const session = cookie.get("session")?.value;
 
         if (!session) {
             return NextResponse.json({message: "Unauthorized"}, {status: 401});
         }
-
+        
+        // Extract admin from session
         const sessionData = JSON.parse(session);
         const id_admin = sessionData.id_admin;
 
+        // Data extraction and validation
         const body = await request.json();
         const { title, authors, url, texts, images } = body;
 

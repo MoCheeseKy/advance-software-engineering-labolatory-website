@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// GET function to fetch registrant data based on nim
 export async function GET(request: Request, { params }: { params: { nim: string } }) {
     try {
         const nim = params.nim;

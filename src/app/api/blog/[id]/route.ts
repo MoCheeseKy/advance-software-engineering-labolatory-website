@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 
+// PUT function to update a blog post based on id
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
+        // Authentication check
         const cookie = await cookies();
         const session = cookie.get('session')?.value;
 
@@ -11,6 +13,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
             return NextResponse.json({message: "Unauthorized"}, {status: 401});
         }
 
+        // Data extraction and update
         const { id } = await params;
         const id_blog = Number(id);
         const body = await request.json();
@@ -36,8 +39,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
 } 
 
+// DELETE function to delete a blog post based on id
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
+        // Authentication check
         const cookie = await cookies();
         const session = cookie.get('session')?.value;
 
@@ -45,6 +50,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
             return NextResponse.json({message: "Unauthorized"}, {status: 401});
         }
         
+        // Data extraction and deletion
         const { id } = await params;
         const id_blog = Number(id);
 

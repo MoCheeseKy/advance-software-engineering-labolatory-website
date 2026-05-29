@@ -3,8 +3,10 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+// GET function to fetch all fakultas, divisi, and prodi data
 export async function GET() {
     try {
+        // Fetch fakultas, divisi, and prodi data from the database in parallel
         const [fakultas, divisi, prodi] = await Promise.all([
             prisma.fakultas.findMany(
                 {orderBy: { id_fakultas: "asc" }}

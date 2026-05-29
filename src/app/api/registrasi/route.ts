@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// Function to validate if a string is a valid URL
 const isUrlValid = (url: string) => {
     try {
         new URL(url);
@@ -12,6 +13,7 @@ const isUrlValid = (url: string) => {
     }
 }
 
+// Function to validate input data for registrasi
 const isValidInput = (input: any) => {
     const { nim, nama, nama_prodi, angkatan, cv, motivationLetter } = input;
 
@@ -26,6 +28,7 @@ const isValidInput = (input: any) => {
     return { isValid: true };
 }
 
+// Helper function to get prodi ID based on nama_prodi
 const getProdi = async (nama_prodi: string) => {
     const prodi = await prisma.prodi.findFirst({
         where: {
@@ -39,8 +42,10 @@ const getProdi = async (nama_prodi: string) => {
     return prodi ? prodi.id_prodi : null;
 }
 
+// GET function to fetch all registrasi data
 export async function GET() {
     try {
+        // Fetch registrasi data from the database, including related prodi and divisi information
         const data = await prisma.registrasi.findMany({
             include: {
                 prodi: {
@@ -64,8 +69,10 @@ export async function GET() {
     }    
 }
 
+// POST function to create a new registrasi entry
 export async function POST(request: Request) {
     try {
+        // Data extraction and validation
         const body = await request.json();
         const validation = isValidInput(body);
 
@@ -78,6 +85,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ success : false, message: "Prodi not found" }, { status: 404 });
         }
 
+        // Create a new registrasi entry in the database, along with related dataDivisi entries if provided
         const newRegistrasi = await prisma.$transaction(async (tx) => {
             const registrasi = await tx.registrasi.create({
                 data: {
@@ -92,6 +100,7 @@ export async function POST(request: Request) {
                 },
             });
 
+            // Create related dataDivisi entries if id_divisi_1 and/or id_divisi_2 are provided
             if (body.id_divisi_1) {
                 await tx.dataDivisi.create({
                     data: {

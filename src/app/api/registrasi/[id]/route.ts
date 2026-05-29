@@ -2,16 +2,18 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+// Put function to update registrasi data based on id
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
     try {
-
+        // Authentication check
         const cookie = await cookies();
         const session = cookie.get('session')?.value;
 
         if (!session) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }   
-
+        
+        // Data extraction and update
         const body = await request.json();
         const id = parseInt(params.id);
         const updatedRegistrasi = await prisma.registrasi.update({
@@ -28,8 +30,10 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     }
 }
 
+// DELETE function to delete registrasi data based on id
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
     try {
+        // Authentication check
         const cookie = await cookies();
         const session = cookie.get('session')?.value;
 
@@ -37,6 +41,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
+        // Data extraction and deletion
         prisma.dataDivisi.deleteMany({
             where: { id_register: parseInt(params.id) }
         });
