@@ -1,0 +1,257 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Lab ASE Website API Documentation",
+    "version": "1.0.0",
+    "description": "Dokumentasi API untuk CMS Blog, Product, dan Registrasi Anggota"
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Server Saat Ini (Bebas CORS)"
+    }
+  ],
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "summary": "Admin Login",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string", "example": "admin123" },
+                  "password": { "type": "string", "example": "password_kamu" }
+                },
+                "required": ["username", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login berhasil" },
+          "401": { "description": "Username atau password salah" }
+        }
+      }
+    },
+    "/api/blog": {
+      "get": {
+        "summary": "Ambil Semua Artikel Blog",
+        "tags": ["Blog"],
+        "responses": { "200": { "description": "Berhasil" } }
+      },
+      "post": {
+        "summary": "Tambah Artikel Blog Baru (Butuh Login)",
+        "tags": ["Blog"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string", "example": "Artikel Baru" },
+                  "url": { "type": "string", "example": "artikel-baru-123" },
+                  "authors": { "type": "array", "items": { "type": "string" } },
+                  "texts": { "type": "array", "items": { "type": "string" } },
+                  "images": { "type": "array", "items": { "type": "string" } }
+                },
+                "required": ["title", "url"]
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Berhasil dibuat" } }
+      }
+    },
+    "/api/blog/{id}": {
+      "put": {
+        "summary": "Edit Artikel Blog (Butuh Login)",
+        "tags": ["Blog"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "url": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Berhasil diupdate" } }
+      },
+      "delete": {
+        "summary": "Hapus Artikel Blog (Butuh Login)",
+        "tags": ["Blog"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Berhasil dihapus" } }
+      }
+    },
+    "/api/product": {
+      "get": {
+        "summary": "Ambil Semua Produk",
+        "tags": ["Product"],
+        "responses": { "200": { "description": "Berhasil" } }
+      },
+      "post": {
+        "summary": "Tambah Produk Baru (Butuh Login)",
+        "tags": ["Product"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "example": "Aplikasi Gudang" },
+                  "developers": { "type": "array", "items": { "type": "string" } },
+                  "texts": { "type": "array", "items": { "type": "string" } },
+                  "images": { "type": "array", "items": { "type": "string" } }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Berhasil dibuat" } }
+      }
+    },
+    "/api/product/{id}": {
+      "put": {
+        "summary": "Edit Produk (Butuh Login)",
+        "tags": ["Product"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Berhasil diupdate" } }
+      },
+      "delete": {
+        "summary": "Hapus Produk (Butuh Login)",
+        "tags": ["Product"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Berhasil dihapus" } }
+      }
+    },
+    "/api/registrasi": {
+      "get": {
+        "summary": "Ambil Semua Data Pendaftar/Registrasi (Butuh Login)",
+        "tags": ["Registrasi"],
+        "responses": {
+          "200": { "description": "Berhasil mengambil semua data pendaftar" },
+          "401": { "description": "Sesi tidak valid / belum login" }
+        }
+      },
+      "post": {
+        "summary": "Kirim Formulir Registrasi Baru (Publik / Tanpa Login)",
+        "tags": ["Registrasi"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id_prodi": { "type": "integer", "example": 1 },
+                  "nim": { "type": "string", "example": "103012330064" },
+                  "nama": { "type": "string", "example": "Nama Mahasiswa" },
+                  "angkatan": { "type": "integer", "example": 2023 },
+                  "cv": { "type": "string", "example": "https://supabase-storage-url.com/cv.pdf" },
+                  "motivationLetter": { "type": "string", "example": "Saya ingin mendaftar laboratorium karena..." },
+                  "portofolio": { "type": "string", "example": "https://github.com/repo" },
+                  "status": { "type": "boolean", "example": false, "description": "Default false (belum diterima)" }
+                },
+                "required": ["id_prodi", "nim", "nama", "angkatan", "cv", "motivationLetter", "portofolio"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Pendaftaran berhasil dikirim" },
+          "400": { "description": "Data input ada yang kurang / tidak valid" }
+        }
+      }
+    },
+    "/api/registrasi/{id}": {
+      "put": {
+        "summary": "Update Status Kelulusan / Data Pendaftar (Butuh Login)",
+        "tags": ["Registrasi"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": { "type": "boolean", "example": true, "description": "Ubah ke true jika pendaftar lulus seleksi" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Status pendaftar berhasil diperbarui" }
+        }
+      },
+      "delete": {
+        "summary": "Hapus Data Pendaftar (Butuh Login)",
+        "tags": ["Registrasi"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Data pendaftar berhasil dihapus" }
+        }
+      }
+    },
+    "/api/announcement/{nim}": {
+      "get": {
+        "summary": "Ambil Data Pengumuman Pendaftar Berdasarkan NIM (Publik)",
+        "tags": ["Announcement"],
+        "parameters": [
+          {
+            "name": "nim",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "103012330064"
+          }
+        ],
+        "responses": {
+          "200": { 
+            "description": "Berhasil mengambil data pengumuman pendaftar",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "message": "Registrant found",
+                  "data": {
+                    "nim": "103012330064",
+                    "nama": "Nama Mahasiswa",
+                    "status": true
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Pendaftar dengan NIM tersebut tidak ditemukan" },
+          "500": { "description": "Gagal mengambil data pengumuman" }
+        }
+      }
+    }
+  }
+}
