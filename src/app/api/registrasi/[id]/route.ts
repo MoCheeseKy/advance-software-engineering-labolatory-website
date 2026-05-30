@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 
 // Put function to update registrasi data based on id
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: { id: string } | Promise<{ id: string }> }) {
     try {
         // Authentication check
         const cookie = await cookies();
@@ -13,9 +13,14 @@ export async function PUT(request: Request, { params }: { params: { id: string }
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }   
         
-        // Data extraction and update
+        const resolvedParams = await params;
+        const id = parseInt(resolvedParams.id);
+
+        if (isNaN(id)) {
+             return NextResponse.json({ success: false, message: "ID Pendaftar tidak valid" }, { status: 400 });
+        }
+
         const body = await request.json();
-        const id = parseInt(params.id);
         const updatedRegistrasi = await prisma.registrasi.update({
             where: { id_registrasi: id },
             data: body,
@@ -31,7 +36,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 // DELETE function to delete registrasi data based on id
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: { id: string } | Promise<{ id: string }> }) {
     try {
         // Authentication check
         const cookie = await cookies();
@@ -41,13 +46,19 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        // Data extraction and deletion
-        prisma.dataDivisi.deleteMany({
-            where: { id_register: parseInt(params.id) }
+        const resolvedParams = await params;
+        const id = parseInt(resolvedParams.id);
+
+        if (isNaN(id)) {
+            return NextResponse.json({ success: false, message: "ID Pendaftar tidak valid" }, { status: 400 });
+       }
+
+        await prisma.dataDivisi.deleteMany({
+            where: { id_register: id }
         });
 
-        prisma.registrasi.delete({
-            where: { id_registrasi: parseInt(params.id) }
+        await prisma.registrasi.delete({
+            where: { id_registrasi: id }
         });
 
         return NextResponse.json({ success: true, message: "Registrasi deleted successfully" }, { status: 200 });

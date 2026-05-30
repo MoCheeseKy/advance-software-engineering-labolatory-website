@@ -12,7 +12,7 @@ export async function GET() {
             },
             include: {
                 admin: {
-                    select: {name: true, username: true}
+                    select: {username: true}
                 }
             }
         });
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
         
         // Extract admin from session
         const sessionData = JSON.parse(session);
-        const id_admin = sessionData.id_admin;
+        const id_admin = sessionData.id;
 
         // Data extraction and validation
         const body = await request.json();
