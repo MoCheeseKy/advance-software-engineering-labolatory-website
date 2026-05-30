@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
         // Extract admin id from session data
         const sessionData = JSON.parse(session);
-        const id_admin = sessionData.id_admin;
+        const id_admin = sessionData.id;
 
         // Data extraction and validation
         const body = await request.json();
