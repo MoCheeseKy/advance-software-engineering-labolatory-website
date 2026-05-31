@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
     try {
@@ -14,7 +15,11 @@ export async function POST(request: Request) {
         if (!user){
             return NextResponse.json({ message: "Invalid username or password" }, { status: 401 }); 
         }
-        if (user.password !== password) {
+
+        // Hashing check
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
             return NextResponse.json({ message: "Invalid username or password" }, { status: 401 }); 
         }
 
