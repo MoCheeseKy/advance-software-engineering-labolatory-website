@@ -1,0 +1,145 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Lab ASE Website - Client API",
+    "version": "1.0.0",
+    "description": "Dokumentasi API Publik (Client-Side) untuk pengunjung website dan calon pendaftar. Seluruh endpoint di sini dapat diakses tanpa login."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Server Saat Ini"
+    }
+  ],
+  "tags": [
+    { "name": "Public - Blog", "description": "Akses artikel blog untuk pengunjung" },
+    { "name": "Public - Product", "description": "Akses showcase produk untuk pengunjung" },
+    { "name": "Public - Registrasi", "description": "Pengiriman form pendaftaran lab" },
+    { "name": "Public - Fakultas", "description": "Data master untuk form pendaftaran" },
+    { "name": "Public - Announcement", "description": "Pengumuman hasil seleksi" }
+  ],
+  "paths": {
+    "/api/blog": {
+      "get": {
+        "summary": "Ambil Semua Artikel Blog",
+        "tags": ["Public - Blog"],
+        "responses": {
+          "200": { "description": "Berhasil mengambil daftar blog" }
+        }
+      }
+    },
+    "/api/blog/{id}": {
+      "get": {
+        "summary": "Ambil Detail Artikel Blog",
+        "tags": ["Public - Blog"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Berhasil mengambil detail blog" },
+          "400": { "description": "ID Artikel tidak valid" },
+          "404": { "description": "Artikel tidak ditemukan" }
+        }
+      }
+    },
+    "/api/product": {
+      "get": {
+        "summary": "Ambil Semua Produk",
+        "tags": ["Public - Product"],
+        "responses": {
+          "200": { "description": "Berhasil mengambil daftar produk" }
+        }
+      }
+    },
+    "/api/product/{id}": {
+      "get": {
+        "summary": "Ambil Detail Produk",
+        "tags": ["Public - Product"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Berhasil mengambil detail produk" },
+          "400": { "description": "ID Produk tidak valid" },
+          "404": { "description": "Produk tidak ditemukan" }
+        }
+      }
+    },
+    "/api/fakultas": {
+      "get": {
+        "summary": "Ambil Data Fakultas & Prodi",
+        "tags": ["Public - Fakultas"],
+        "description": "Digunakan untuk mengisi opsi dropdown (Fakultas dan Program Studi) pada form registrasi.",
+        "responses": {
+          "200": { "description": "Berhasil mengambil data fakultas beserta relasi prodi" }
+        }
+      }
+    },
+    "/api/registrasi": {
+      "post": {
+        "summary": "Kirim Formulir Registrasi Baru",
+        "tags": ["Public - Registrasi"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id_prodi": { "type": "integer", "example": 1 },
+                  "nim": { "type": "string", "example": "103012330064" },
+                  "nama": { "type": "string", "example": "Nama Mahasiswa" },
+                  "angkatan": { "type": "integer", "example": 2023 },
+                  "cv": { "type": "string", "example": "https://storage.com/cv.pdf" },
+                  "motivationLetter": { "type": "string", "example": "Saya ingin mendaftar..." },
+                  "portofolio": { "type": "string", "example": "https://github.com/repo" }
+                },
+                "required": ["id_prodi", "nim", "nama", "angkatan", "cv", "motivationLetter", "portofolio"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Pendaftaran berhasil dikirim" },
+          "400": { "description": "Data input tidak valid / ada yang kosong" },
+          "500": { "description": "Terjadi kesalahan pada server saat menyimpan data" }
+        }
+      }
+    },
+    "/api/announcement/{nim}": {
+      "get": {
+        "summary": "Ambil Data Pengumuman Pendaftar Berdasarkan NIM",
+        "tags": ["Public - Announcement"],
+        "parameters": [
+          {
+            "name": "nim",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "103012330064"
+          }
+        ],
+        "responses": {
+          "200": { 
+            "description": "Berhasil mengambil data pengumuman pendaftar",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "message": "Berhasil mengambil data pengumuman",
+                  "data": {
+                    "nim": "103012330064",
+                    "nama": "Nama Mahasiswa",
+                    "keterima": true
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "NIM tidak boleh kosong" },
+          "404": { "description": "Pendaftar dengan NIM tersebut tidak ditemukan" }
+        }
+      }
+    }
+  }
+}
