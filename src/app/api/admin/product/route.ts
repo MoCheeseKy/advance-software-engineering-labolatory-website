@@ -15,7 +15,6 @@ export async function POST(request: Request) {
         }
 
         // Verify the token
-        // Verify the token
         let sessionData;
         try { 
             sessionData = await verifyToken(session);
