@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
+import { verifyToken } from '@/lib/auth';
 
 // PUT function to update a product based on id
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -11,6 +12,14 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
         if (!session) {
             return NextResponse.json({message: "Unauthorized"}, {status: 401});
+        }
+
+        // Verify the token
+        try {
+            await verifyToken(session);
+
+        } catch (error) {
+            return NextResponse.json({message: "Invalid or expired token"}, {status: 401});
         }
 
         // Data extraction and update
@@ -46,6 +55,14 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
         if (!session) {
             return NextResponse.json({message: "Unauthorized"}, {status: 401});
+        }
+
+        // Verify the token
+        try {
+            await verifyToken(session);
+            
+        } catch (error) {
+            return NextResponse.json({message: "Invalid or expired token"}, {status: 401});
         }
 
         // Data extraction and deletion

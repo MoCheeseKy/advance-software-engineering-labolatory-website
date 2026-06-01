@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
+import { verifyToken } from "@/lib/auth";
 
 // Put function to update registrasi data based on id
 export async function PUT(request: Request, { params }: { params: { id: string } | Promise<{ id: string }> }) {
@@ -18,6 +19,14 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
         if (isNaN(id)) {
              return NextResponse.json({ success: false, message: "ID Pendaftar tidak valid" }, { status: 400 });
+        }
+
+        // Verify the token
+        try {
+            await verifyToken(session);
+
+        } catch (error) {
+            return NextResponse.json({ success: false, message: "Invalid or expired token" }, { status: 401 });
         }
 
         const body = await request.json();
@@ -52,6 +61,14 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         if (isNaN(id)) {
             return NextResponse.json({ success: false, message: "ID Pendaftar tidak valid" }, { status: 400 });
        }
+
+        // Verify the token
+        try {
+            await verifyToken(session); 
+            
+        } catch (error) {   
+            return NextResponse.json({ success: false, message: "Invalid or expired token" }, { status: 401 });
+        }
 
         await prisma.dataDivisi.deleteMany({
             where: { id_register: id }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
+import { verifyToken } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -11,6 +12,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
         if (!session) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+        }
+
+        // Verify the token
+        try {
+            await verifyToken(session);
+
+        } catch (error) {
+            return NextResponse.json({ success: false, message: "Invalid or expired token" }, { status: 401 });
         }
 
         // Data extraction and retrieval
@@ -53,6 +62,14 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
+        // Verify the token
+        try {
+            await verifyToken(session); 
+
+        } catch (error) {
+            return NextResponse.json({ success: false, message: "Invalid or expired token" }, { status: 401 });
+         }
+
         // Data extraction and update
         const { id } = await params;
         const id_admin = Number(id);
@@ -79,7 +96,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
         const updatedAdmin = await prisma.admin.update({
             where: { id_admin: id_admin },
-            data: updateData
+            data: updateData,
+            select: {
+                id_admin: true,
+                username: true,
+                email: true,
+                role: true
+            }
         });
 
         return NextResponse.json({ success: true, message: "Admin account updated successfully", data: updatedAdmin }, { status: 200 });
@@ -98,6 +121,14 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
         
         if (!session) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+        }
+
+        // Verify the token
+        try {
+            await verifyToken(session);
+            
+        } catch (error) {
+            return NextResponse.json({ success: false, message: "Invalid or expired token" }, { status: 401 });
         }
 
         // Data extraction and deletion

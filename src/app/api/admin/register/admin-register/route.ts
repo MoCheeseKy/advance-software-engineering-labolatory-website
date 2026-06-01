@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { verifyToken } from "@/lib/auth";
 
 import bcrypt from "bcryptjs";
 
@@ -12,6 +13,14 @@ export async function POST(request: Request){
 
         if (!session) {
             return NextResponse.json({message: "Unauthorized"}, {status: 401});
+        }
+
+        // Verify the token
+        try {
+            await verifyToken(session);
+            
+        } catch (error) {
+            return NextResponse.json({message: "Invalid or expired token"}, {status: 401});
         }
 
         // Data extraction

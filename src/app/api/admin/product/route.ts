@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
+import { verifyToken } from '@/lib/auth';
 
 // POST function to create a new product
 export async function POST(request: Request) {
@@ -13,8 +14,21 @@ export async function POST(request: Request) {
             return NextResponse.json({message: "Unauthorized"}, {status: 401});
         }
 
+        // Verify the token
+        // Verify the token
+        let sessionData;
+        try { 
+            sessionData = await verifyToken(session);
+
+            if (!sessionData) {
+                return NextResponse.json({message: "Invalid token"}, {status: 401});
+            }
+
+        } catch (error) {
+            return NextResponse.json({message: "Invalid or expired token"}, {status: 401});
+        }
+
         // Extract admin id from session data
-        const sessionData = JSON.parse(session);
         const id_admin = sessionData.id;
 
         // Data extraction and validation
