@@ -43,7 +43,23 @@ export async function middleware(request: NextRequest) {
         }
     }
 
-    return NextResponse.next();
+    if (pathname === "/api-docs" && !session) {
+        const loginUrl = new URL("/login", request.url);
+        return NextResponse.redirect(loginUrl);
+    }
+
+    if (pathname.startsWith("/api-docs") && session) {
+        try {
+            await jwtVerify(session, SECRET_KEY);
+            return NextResponse.next();
+
+        } catch (error) {
+            console.error("Token verification failed in middleware:", error);
+            const response = NextResponse.redirect(new URL("/login", request.url))  ;
+            response.cookies.delete("session");
+            return response;
+        }
+    }
 }
 
 export const config = {
