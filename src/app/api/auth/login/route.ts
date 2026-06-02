@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { generateToken } from "@/lib/auth";
+import bcrypt from "bcryptjs";
+
 
 export async function POST(request: Request) {
     try {
@@ -14,7 +17,11 @@ export async function POST(request: Request) {
         if (!user){
             return NextResponse.json({ message: "Invalid username or password" }, { status: 401 }); 
         }
-        if (user.password !== password) {
+
+        // Hashing check
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
             return NextResponse.json({ message: "Invalid username or password" }, { status: 401 }); 
         }
 
@@ -27,10 +34,11 @@ export async function POST(request: Request) {
         }
 
         const cookie = await cookies();
+        const token = await generateToken(sessionData);
 
         cookie.set({
             name: "session",
-            value: JSON.stringify(sessionData),
+            value: token,
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",

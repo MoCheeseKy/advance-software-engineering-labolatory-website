@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 // GET function to fetch registrant data based on nim
-export async function GET(request: Request, { params }: { params: { nim: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ nim: string }> }) {
     try {
-        const nim = params.nim;
+        const nim = (await params).nim;
 
         const registrant = await prisma.registrasi.findFirst({
             where: { nim: nim },

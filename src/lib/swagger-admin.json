@@ -1,0 +1,307 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Lab ASE Website - Admin API",
+    "version": "1.4.2",
+    "description": "Dokumentasi API Internal (Admin-Side) untuk manajemen sistem Lab ASE. Seluruh rute di bawah ini dilindungi oleh otentikasi sesi (kecuali Login)."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Server Saat Ini (Bebas CORS)"
+    }
+  ],
+  "tags": [
+    { "name": "Auth", "description": "Otentikasi & Sesi Admin" },
+    { "name": "Admin Management", "description": "Manajemen Akun Admin" },
+    { "name": "Registrasi Intern", "description": "Manajemen Pendaftar Laboratorium" },
+    { "name": "Blog", "description": "Manajemen Artikel Blog" },
+    { "name": "Product", "description": "Manajemen Showcase Produk" }
+  ],
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "summary": "Admin Login",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string", "example": "admin123" },
+                  "password": { "type": "string", "example": "password_kamu" }
+                },
+                "required": ["username", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login berhasil (Set Cookie Session)" },
+          "401": { "description": "Username atau password salah" }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "summary": "Admin Logout (Hapus Session)",
+        "tags": ["Auth"],
+        "responses": {
+          "200": { "description": "Berhasil logout" }
+        }
+      }
+    },
+    "/api/admin/register/admin-register": {
+      "post": {
+        "summary": "Registrasi Admin Baru",
+        "tags": ["Admin Management"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string", "example": "admin_baru" },
+                  "email": { "type": "string", "example": "admin@example.com" },
+                  "password": { "type": "string", "example": "passwordkuat123" },
+                  "role": { "type": "string", "example": "admin", "description": "Default 'admin'" }
+                },
+                "required": ["username", "email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Admin berhasil didaftarkan" },
+          "400": { "description": "Input wajib diisi / format salah" },
+          "409": { "description": "Username atau Email sudah terdaftar" }
+        }
+      }
+    },
+    "/api/admin/account/{id}": {
+      "get": {
+        "summary": "Ambil Data Admin by ID (Butuh Login)",
+        "tags": ["Admin Management"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 }],
+        "responses": {
+          "200": { "description": "Berhasil mengambil data admin" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Admin tidak ditemukan" }
+        }
+      },
+      "put": {
+        "summary": "Update Admin / Ganti Password (Butuh Login)",
+        "tags": ["Admin Management"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string", "example": "admin_update" },
+                  "email": { "type": "string", "example": "admin_update@example.com" },
+                  "password": { "type": "string", "example": "passwordbaru123", "description": "Isi jika ingin ganti password, kosongkan jika tidak" },
+                  "role": { "type": "string", "example": "superadmin" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Data admin berhasil diperbarui" }
+        }
+      },
+      "delete": {
+        "summary": "Hapus Admin (Butuh Login)",
+        "tags": ["Admin Management"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 }],
+        "responses": {
+          "200": { "description": "Admin berhasil dihapus" }
+        }
+      }
+    },
+    "/api/admin/register/intern-register": {
+      "get": {
+        "summary": "Ambil Semua Data Pendaftar Intern (Butuh Login)",
+        "tags": ["Registrasi Intern"],
+        "responses": {
+          "200": { "description": "Berhasil mengambil semua data pendaftar" },
+          "401": { "description": "Sesi tidak valid / belum login" }
+        }
+      },
+      "post": {
+        "summary": "Kirim Formulir Registrasi Intern Baru",
+        "tags": ["Registrasi Intern"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id_prodi": { "type": "integer", "example": 1 },
+                  "nim": { "type": "string", "example": "103012330064" },
+                  "nama": { "type": "string", "example": "Nama Mahasiswa" },
+                  "angkatan": { "type": "integer", "example": 2023 },
+                  "cv": { "type": "string", "example": "https://storage.com/cv.pdf" },
+                  "motivationLetter": { "type": "string", "example": "Saya ingin mendaftar..." },
+                  "portofolio": { "type": "string", "example": "https://github.com/repo" },
+                  "status": { "type": "boolean", "example": false }
+                },
+                "required": ["id_prodi", "nim", "nama", "angkatan", "cv", "motivationLetter", "portofolio", "status"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Pendaftaran berhasil dikirim" },
+          "400": { "description": "Data input ada yang kurang / tidak valid" }
+        }
+      }
+    },
+    "/api/admin/register/intern-register/{id}": {
+      "put": {
+        "summary": "Update Status Kelulusan / Data Pendaftar (Butuh Login)",
+        "tags": ["Registrasi Intern"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": { "type": "boolean", "example": true, "description": "Ubah ke true jika pendaftar lulus seleksi" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Status pendaftar berhasil diperbarui" }
+        }
+      },
+      "delete": {
+        "summary": "Hapus Data Pendaftar (Butuh Login)",
+        "tags": ["Registrasi Intern"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" }, "example": 1 }],
+        "responses": {
+          "200": { "description": "Data pendaftar berhasil dihapus" }
+        }
+      }
+    },
+    "/api/admin/blog": {
+      "post": {
+        "summary": "Tambah Artikel Blog Baru (Butuh Login)",
+        "tags": ["Blog"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id_admin": { "type": "integer", "example": 1, "description": "ID Admin pembuat artikel" },
+                  "title": { "type": "string", "example": "Artikel Baru" },
+                  "url": { "type": "string", "example": "artikel-baru-123" },
+                  "authors": { "type": "array", "items": { "type": "string" } },
+                  "texts": { "type": "array", "items": { "type": "string" } },
+                  "images": { "type": "array", "items": { "type": "string" } }
+                },
+                "required": ["id_admin", "title", "url"]
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Berhasil dibuat" } }
+      }
+    },
+    "/api/admin/blog/{id}": {
+      "put": {
+        "summary": "Edit Artikel Blog (Butuh Login)",
+        "tags": ["Blog"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "url": { "type": "string" },
+                  "authors": { "type": "array", "items": { "type": "string" } },
+                  "texts": { "type": "array", "items": { "type": "string" } },
+                  "images": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Berhasil diupdate" } }
+      },
+      "delete": {
+        "summary": "Hapus Artikel Blog (Butuh Login)",
+        "tags": ["Blog"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Berhasil dihapus" } }
+      }
+    },
+    "/api/admin/product": {
+      "post": {
+        "summary": "Tambah Produk Baru (Butuh Login)",
+        "tags": ["Product"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id_admin": { "type": "integer", "example": 1, "description": "ID Admin pembuat produk" },
+                  "name": { "type": "string", "example": "Aplikasi Gudang" },
+                  "developers": { "type": "array", "items": { "type": "string" } },
+                  "texts": { "type": "array", "items": { "type": "string" } },
+                  "images": { "type": "array", "items": { "type": "string" } }
+                },
+                "required": ["id_admin", "name"]
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Berhasil dibuat" } }
+      }
+    },
+    "/api/admin/product/{id}": {
+      "put": {
+        "summary": "Edit Produk (Butuh Login)",
+        "tags": ["Product"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "developers": { "type": "array", "items": { "type": "string" } },
+                  "texts": { "type": "array", "items": { "type": "string" } },
+                  "images": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Berhasil diupdate" } }
+      },
+      "delete": {
+        "summary": "Hapus Produk (Butuh Login)",
+        "tags": ["Product"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Berhasil dihapus" } }
+      }
+    }
+  }
+}
