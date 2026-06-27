@@ -1,19 +1,35 @@
 version: '3.8'
 
 services:
+  # Service Database PostgreSQL lokal
+  postgres:
+    image: postgres:15-alpine
+    container_name: ase_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ase_admin
+      POSTGRES_PASSWORD: ase_password_super_rahasia
+      POSTGRES_DB: ase_laboratory_db
+    ports:
+      - "5432:5432" # Membuka port 5432 VPS agar bisa diakses dari laptop Fedora kamu
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Service Next.js Application
   nextjs-app:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-        - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     container_name: nextjs_web
     restart: always
     ports:
-      - "80:3000" # Mengarahkan port 80 VPS langsung ke port 3000 Next.js
+      - "80:3000" # Port 80 VPS langsung ke port 3000 Next.js
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-      - DATABASE_URL=${DATABASE_URL} # <--- Diperlukan oleh Prisma di dalam container saat runtime
+      # DATABASE_URL diarahkan langsung ke container 'postgres' di atas
+      - DATABASE_URL=postgresql://ase_admin:ase_password_super_rahasia@postgres:5432/ase_laboratory_db
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data: # Volume untuk menyimpan data PostgreSQL agar persistent
