@@ -21,11 +21,11 @@ services:
     container_name: nextjs_web
     restart: always
     ports:
-      - "80:3000" # Mapping port 80 VPS ke port 3000 container
+      - "80:3000"
     environment:
       - NODE_ENV=production
-      # DATABASE_URL mengarah ke container 'postgres' di atas menggunakan nama servicenya
       - DATABASE_URL=postgresql://ase_admin:ase_password_super_rahasia@postgres:5432/ase_laboratory_db
+      - JWT_SECRET=${JWT_SECRET} # 👈 TAMBAHKAN INI (Mengambil nilai asli dari file .env VPS)
     depends_on:
       - postgres
 

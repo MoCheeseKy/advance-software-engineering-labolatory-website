@@ -24,6 +24,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 # Berikan dummy DATABASE_URL agar prisma generate tidak error saat build jika dibutuhkan
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+ENV JWT_SECRET="ini_dummy_secret_buat_build_doang_ya_shiota"
 
 RUN npm run build
 
