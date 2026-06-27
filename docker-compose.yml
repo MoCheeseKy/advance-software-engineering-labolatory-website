@@ -1,7 +1,5 @@
-version: '3.8'
-
 services:
-  # Service Database PostgreSQL lokal
+  # Service 1: Database PostgreSQL Lokal
   postgres:
     image: postgres:15-alpine
     container_name: ase_postgres
@@ -11,11 +9,11 @@ services:
       POSTGRES_PASSWORD: ase_password_super_rahasia
       POSTGRES_DB: ase_laboratory_db
     ports:
-      - "5432:5432" # Membuka port 5432 VPS agar bisa diakses dari laptop Fedora kamu
+      - "5432:5432" # Membuka port database agar bisa ditembak dari laptop Fedora kamu
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # Service Next.js Application
+  # Service 2: Aplikasi Next.js Standalone
   nextjs-app:
     build:
       context: .
@@ -23,13 +21,13 @@ services:
     container_name: nextjs_web
     restart: always
     ports:
-      - "80:3000" # Port 80 VPS langsung ke port 3000 Next.js
+      - "80:3000" # Mapping port 80 VPS ke port 3000 container
     environment:
       - NODE_ENV=production
-      # DATABASE_URL diarahkan langsung ke container 'postgres' di atas
+      # DATABASE_URL mengarah ke container 'postgres' di atas menggunakan nama servicenya
       - DATABASE_URL=postgresql://ase_admin:ase_password_super_rahasia@postgres:5432/ase_laboratory_db
     depends_on:
       - postgres
 
 volumes:
-  postgres_data: # Volume untuk menyimpan data PostgreSQL agar persistent
+  postgres_data: # Data database aman tersimpan di VPS meskipun container restart
