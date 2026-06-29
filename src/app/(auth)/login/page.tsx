@@ -26,20 +26,24 @@ export default function LoginPage() {
     try {
       setLoading(true);
       setError(null);
+
       const res  = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(form),
       });
+
       const data = await res.json();
       if (!res.ok) {
         setError(data.message ?? 'Login failed. Please try again.');
         return;
       }
       router.push(data.redirectUrl ?? '/admin');
+
     } catch {
       setError('Unable to reach the server. Check your connection.');
+      
     } finally {
       setLoading(false);
     }
