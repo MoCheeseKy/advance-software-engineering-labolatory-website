@@ -15,15 +15,17 @@ export async function GET() {
 
         // Verify + decode token
         let sessionData: { id: number; username: string; email: string; role: string };
+
         try {
             sessionData = await verifyToken(session) as typeof sessionData;
+
         } catch {
             return NextResponse.json({ success: false, message: 'Invalid or expired token' }, { status: 401 });
         }
 
         const id_admin = Number(sessionData.id);
 
-        // Fetch admin from DB
+        // Fetch data Admin
         const adminData = await prisma.admin.findUnique({
             where: { id_admin },
             select: {
