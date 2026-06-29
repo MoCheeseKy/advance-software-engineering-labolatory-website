@@ -75,7 +75,7 @@ export default function Sidebar() {
     try {
       setIsLoggingOut(true);
       
-      const res = await fetch('/api/logout', { 
+      const res = await fetch('/api/auth/logout', { 
         method: 'POST',
         credentials: 'include'
       });
