@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { generateToken } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 
-
 export async function POST(request: Request) {
     try {
         const { username, password } = await request.json();
@@ -46,8 +45,7 @@ export async function POST(request: Request) {
             path: "/",
         });
         
-        // Redirect to admin dashboard
-        const targetUrl = "/admin/dashboard";
+        const targetUrl = "/admin";
         
         return NextResponse.json({ redirectUrl: targetUrl, message: "Login successful" }, { status: 200 });
 
