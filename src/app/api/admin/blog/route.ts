@@ -3,6 +3,52 @@ import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
 
+
+// GET function to fetch all blog posts
+export async function GET(request: Request) {
+    try {
+        // Authentication check
+        const cookie = await cookies();
+        const session = cookie.get("session")?.value;
+ 
+        if (!session) {
+            return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+        }
+        
+        // Verify the token
+        try {
+            await verifyToken(session);
+        } catch (error) {
+            return NextResponse.json({ success: false, message: "Invalid or expired token" }, { status: 401 });
+        }
+        
+        const allBlogs = await prisma.blog.findMany({
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id_blog:   true,
+                title:     true,
+                authors:   true,
+                url:       true,
+                texts:     true,
+                images:    true, 
+                createdAt: true,
+                updatedAt: true,
+                id_admin:  true,
+            }
+        });
+ 
+        return NextResponse.json({
+            success: true,
+            message: "Success get all blog data",
+            data: allBlogs
+        }, { status: 200 });
+ 
+    } catch (error) {
+        console.error("Error fetching blogs:", error);
+        return NextResponse.json({ success: false, message: "Internal Server Error" }, { status: 500 });
+    }
+}
+
 // POST function to create a new blog post
 export async function POST(request: Request) {
     try {

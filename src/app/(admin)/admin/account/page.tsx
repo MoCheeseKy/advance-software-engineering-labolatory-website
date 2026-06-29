@@ -303,7 +303,7 @@ export default function AdminAccountPage() {
         </div>
       )}
 
-      {/* ── ADD Modal ── */}
+      {/* ADD Modal */}
       {modal.type === 'add' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
@@ -336,7 +336,7 @@ export default function AdminAccountPage() {
   );
 }
 
-// ── Reusable form field ────────────────────────────────────────────────────
+// Form Field
 function FormField({
   label, name, type = 'text', defaultValue, placeholder, required,
 }: {
