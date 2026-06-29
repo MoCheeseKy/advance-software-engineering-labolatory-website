@@ -46,8 +46,7 @@ export async function POST(request: Request) {
             path: "/",
         });
         
-        // Redirect to admin dashboard
-        const targetUrl = "/admin/dashboard";
+        const targetUrl = "/admin";
         
         return NextResponse.json({ redirectUrl: targetUrl, message: "Login successful" }, { status: 200 });
 
