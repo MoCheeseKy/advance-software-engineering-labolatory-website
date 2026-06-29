@@ -3,6 +3,56 @@ import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { verifyToken } from "@/lib/auth";
 
+
+export async function GET(request: Request, { params }: { params: { id: string } | Promise<{ id: string }> }) {
+    try {
+        // Authentication check
+        const cookie = await cookies();
+        const session = cookie.get('session')?.value;
+ 
+        if (!session) {
+            return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+        }
+ 
+        const resolvedParams = await params;
+        const id = parseInt(resolvedParams.id);
+ 
+        if (isNaN(id)) {
+            return NextResponse.json({ success: false, message: "ID Pendaftar tidak valid" }, { status: 400 });
+        }
+ 
+        // Verify the token
+        try {
+            await verifyToken(session);
+        } catch (error) {
+            return NextResponse.json({ success: false, message: "Invalid or expired token" }, { status: 401 });
+        }
+ 
+        const registrasi = await prisma.registrasi.findUnique({
+            where: { id_registrasi: id },
+            include: {
+                prodi: {
+                    include: { fakultas: true }
+                },
+                dataDivisi: {
+                    include: { divisi: true }
+                }
+            }
+        });
+ 
+        if (!registrasi) {
+            return NextResponse.json({ success: false, message: "Data registrasi tidak ditemukan" }, { status: 404 });
+        }
+ 
+        return NextResponse.json({ success: true, data: registrasi }, { status: 200 });
+    }
+ 
+    catch (error) {
+        console.error("Error fetching registrasi: ", error);
+        return NextResponse.json({ success: false, message: "Failed to fetch registrasi" }, { status: 500 });
+    }
+}
+
 // Put function to update registrasi data based on id
 export async function PUT(request: Request, { params }: { params: { id: string } | Promise<{ id: string }> }) {
     try {
@@ -30,6 +80,14 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         }
 
         const body = await request.json();
+
+        if ('status' in body && typeof body.status !== 'boolean') {
+            return NextResponse.json(
+                { success: false, message: "Status Invalid" },
+                { status: 400 }
+            );
+        }
+
         const updatedRegistrasi = await prisma.registrasi.update({
             where: { id_registrasi: id },
             data: body,
