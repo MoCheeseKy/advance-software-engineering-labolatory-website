@@ -108,14 +108,14 @@ export default function Division() {
       </div>
 
       {/* Button */}
-      <div className='mt-16 z-20'>
+      {/* <div className='mt-16 z-20'>
         <Button
           colorType='primary'
           className='!rounded-lg px-8 py-3.5 text-base md:text-lg w-fit shadow-md font-semibold tracking-wide'
         >
           Learn More About our Division
         </Button>
-      </div>
+      </div> */}
 
       {/* Sheet Modal */}
       <SheetModal

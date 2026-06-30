@@ -32,7 +32,7 @@ export default function Blog() {
           colorType='primary'
           className='w-fit !rounded-[16px] px-10 py-3 text-lg font-bold shadow-md'
         >
-          More Blog
+          More Blogs
         </Button>
       </Wrapper>
     </section>

@@ -22,11 +22,11 @@ export default function Product() {
         <div className='flex flex-col items-center text-center text-black mb-10'>
           <p className='text-[32px] font-semibold leading-tight'>Our</p>
           <h2 className='text-primary text-[56px] md:text-[64px] font-bold leading-tight'>
-            Product
+            Products
           </h2>
         </div>
 
-        <div className='relative w-full max-w-[900px] overflow-hidden rounded-[24px] md:rounded-[40px] shadow-[0_10px_40px_rgba(0,0,0,0.08)] bg-white'>
+        <div className='relative w-full max-w-[900px] overflow-hidden'>
           <div
             className='flex transition-transform duration-700 ease-in-out'
             style={{ transform: `translateX(-${currentIndex * 100}%)` }}
@@ -36,7 +36,10 @@ export default function Product() {
                 key={product.id}
                 className='relative w-full shrink-0 aspect-[16/9] md:aspect-[2/1] group'
               >
-                <Link href={`/product/${product.id}`} className='block w-full h-full relative'>
+                <Link
+                  href={`/product/${product.id}`}
+                  className='block w-full h-full relative'
+                >
                   <Image
                     src={product.image}
                     alt={product.title}
@@ -45,7 +48,7 @@ export default function Product() {
                   />
 
                   {/* Hover Overlay */}
-                  <div className='absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center items-center text-center p-8 backdrop-blur-sm'>
+                  <div className='absolute inset-0 md:inset-4 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center items-center text-center p-8 backdrop-blur-sm rounded-none md:rounded-3xl'>
                     <h3 className='text-white text-2xl md:text-4xl font-bold mb-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300'>
                       {product.title}
                     </h3>
@@ -82,7 +85,7 @@ export default function Product() {
           href='/product'
           className='mt-12 bg-primary hover:bg-orange-600 text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-sm md:text-base'
         >
-          More Product
+          More Products
         </Link>
       </Wrapper>
     </section>

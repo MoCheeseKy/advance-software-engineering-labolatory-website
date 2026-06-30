@@ -52,7 +52,7 @@ export default function AboutHistory() {
           {/* Right Column: Timeline */}
           <div className='relative flex flex-col gap-10 py-2'>
             {/* Vertical Line */}
-            <div className='absolute left-3 md:left-4 top-2 bottom-2 w-[3px] bg-[#FDD9B5]' />
+            <div className='absolute left-3 md:left-4 top-2 bottom-2 w-[3px] bg-[#FDD9B5] -translate-x-1/2' />
 
             {timelineItems.map((item, index) => (
               <div

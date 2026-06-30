@@ -26,18 +26,39 @@ export default function Footer() {
             <div>
               <h3 className='font-bold mb-4'>Our Developers</h3>
               <div className='flex items-center gap-3'>
-                {/* Mockup Profile Pictures - Ganti src dengan gambar aslinya nanti */}
-                {[1, 2, 3].map((item) => (
-                  <div
-                    key={item}
-                    className='w-[45px] h-[45px] rounded-full bg-gray-600 overflow-hidden border-2 border-transparent hover:border-orange-500 transition-colors cursor-pointer'
+                {[
+                  {
+                    name: 'Edsel',
+                    image: '/images/devs/adsel_uiux.svg',
+                    linkedin: 'https://www.linkedin.com/in/edselspth',
+                  },
+                  {
+                    name: 'Alvin',
+                    image: '/images/devs/alvin_be.svg',
+                    linkedin:
+                      'https://www.linkedin.com/in/muhammad-alvin-ababil-7406592a2',
+                  },
+                  {
+                    name: 'Rifky',
+                    image: '/images/devs/rifky_fe.svg',
+                    linkedin: 'https://www.linkedin.com/in/rifkymprayudhi',
+                  },
+                ].map((dev, index) => (
+                  <a
+                    key={index}
+                    href={dev.linkedin}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='w-[45px] h-[45px] rounded-full bg-gray-600 overflow-hidden border-2 border-transparent hover:border-orange-500 transition-colors cursor-pointer block'
                   >
-                    <img
-                      src={`https://ui-avatars.com/api/?name=Dev+${item}&background=random`}
-                      alt={`Developer ${item}`}
+                    <Image
+                      src={dev.image}
+                      alt={`Developer ${dev.name}`}
+                      width={45}
+                      height={45}
                       className='w-full h-full object-cover'
                     />
-                  </div>
+                  </a>
                 ))}
               </div>
             </div>
@@ -65,10 +86,10 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href='/division'
+                  href='/product'
                   className='hover:text-orange-500 transition-colors'
                 >
-                  Division
+                  Products
                 </Link>
               </li>
               <li>
@@ -76,7 +97,7 @@ export default function Footer() {
                   href='/blog'
                   className='hover:text-orange-500 transition-colors'
                 >
-                  Blog
+                  Blogs
                 </Link>
               </li>
               <li>
