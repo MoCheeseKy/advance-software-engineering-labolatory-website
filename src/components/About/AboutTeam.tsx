@@ -35,7 +35,7 @@ export default function AboutTeam() {
         {/* Lab's Assistance */}
         <div className='flex flex-col items-center w-full'>
           <h2 className='text-[30px] md:text-[36px] font-bold text-center mb-10'>
-            Our <span className='text-primary'>Lab&apos;s Assistance</span>
+            Our <span className='text-primary'>Lab&apos;s Assistant</span>
           </h2>
 
           <div className='grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8 justify-items-center w-full max-w-[700px]'>

@@ -24,7 +24,9 @@ export default function AssistanceImageCarousel() {
     <section className='w-full overflow-hidden bg-white'>
       <div className='flex flex-col items-center text-center bg-white text-black mb-10'>
         <p className='text-[32px] font-semibold'>Our</p>
-        <p className='text-primary text-[64px] font-bold'>Blogs</p>
+        <p className='text-primary text-[64px] font-bold'>
+          Labolatory Assistants
+        </p>
       </div>
       <div
         className='flex w-max'

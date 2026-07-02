@@ -82,7 +82,7 @@ export default function BlogPage() {
         {/* Title */}
         <div className='flex flex-col items-center mb-16'>
           <h2 className='text-primary text-[32px] md:text-[40px] font-bold pb-2 relative after:content-[""] after:absolute after:bottom-0 after:left-1/4 after:w-1/2 after:h-[4px] after:bg-primary'>
-            Blog
+            Blogs
           </h2>
         </div>
 
