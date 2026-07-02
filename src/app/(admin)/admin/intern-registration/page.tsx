@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { FiEye, FiCheckCircle, FiXCircle, FiSearch, FiX, FiLoader } from 'react-icons/fi';
+import { FiEye, FiCheckCircle, FiXCircle, FiSearch, FiX, FiLoader, FiDownload } from 'react-icons/fi';
 
 type Registration = {
   id: number;
@@ -27,6 +27,7 @@ export default function AdminInternRegistrationPage() {
   // State untuk mencegah multiple klik saat submit action
   const [actionLoading, setActionLoading] = useState(false);
   const [viewLoading, setViewLoading] = useState<number | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Modal states
   const [modalConfig, setModalConfig] = useState<{
@@ -169,13 +170,60 @@ export default function AdminInternRegistrationPage() {
     }
   };
 
+  // Fungsi untuk Handle Export Excel
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true);
+      
+      const res = await fetch('/api/admin/register/intern-register/export', {
+        method: 'GET',
+        credentials: 'include'
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.message || 'Gagal mengunduh file Excel');
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      const dateStr = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `Registrasi_Intern_${dateStr}.xlsx`);
+      
+      document.body.appendChild(link);
+      link.click();
+      
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+    } catch (err: any) {
+      console.error('Export failed:', err);
+      alert(err.message || 'Terjadi kesalahan saat meng-export data');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6 relative">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold text-gray-800">Intern Registrations</h2>
           <p className="text-gray-500 mt-1">Review and manage intern applications.</p>
         </div>
+        
+        {/* Tombol Export */}
+        <button
+          onClick={handleExportExcel}
+          disabled={isExporting}
+          className="flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-xl font-semibold transition-colors disabled:opacity-70 shadow-sm border border-orange-600/20"
+        >
+          {isExporting ? <FiLoader className="animate-spin text-xl" /> : <FiDownload className="text-xl" />}
+          {isExporting ? 'Exporting...' : 'Export to Excel'}
+        </button>
       </div>
 
       {error && (
