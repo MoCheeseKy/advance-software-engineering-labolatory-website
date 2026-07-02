@@ -170,7 +170,7 @@ export default function AdminInternRegistrationPage() {
     }
   };
 
-  // Fungsi untuk Handle Export Excel
+  // Handle Export Excel
   const handleExportExcel = async () => {
     try {
       setIsExporting(true);
