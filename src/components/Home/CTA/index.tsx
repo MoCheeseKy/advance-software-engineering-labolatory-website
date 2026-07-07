@@ -1,6 +1,8 @@
 import React from 'react';
 import Wrapper from '@/components/_shared/Wrapper';
 import Button from '@/components/_shared/Button';
+import { INTERN_REGISTRATION_OPEN } from '@/lib/constants';
+import Link from 'next/link';
 
 export default function CTA() {
   return (
@@ -27,12 +29,25 @@ export default function CTA() {
               langsung mengerjakan proyek real-world seru di bidang Software
               Engineering dan Game Development.
             </p>
-            <Button
-              colorType='primary'
-              className='!w-auto !rounded-lg !px-6 !py-3.5 !text-sm md:!text-base font-bold shadow-md hover:scale-[1.02] transition-transform'
-            >
-              Daftar Intern Sekarang!!
-            </Button>
+            {INTERN_REGISTRATION_OPEN ? (
+              <Link href='/intern/register'>
+                <Button
+                  colorType='primary'
+                  className='!w-auto !rounded-lg !px-6 !py-3.5 !text-sm md:!text-base font-bold shadow-md hover:scale-[1.02] transition-transform'
+                >
+                  Daftar Intern Sekarang!!
+                </Button>
+              </Link>
+            ) : (
+              <Link href='/intern'>
+                <Button
+                  colorType='primary'
+                  className='!w-auto !rounded-lg !px-6 !py-3.5 !text-sm md:!text-base font-bold shadow-md hover:scale-[1.02] transition-transform'
+                >
+                  Pelajari Lebih Lanjut
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </Wrapper>

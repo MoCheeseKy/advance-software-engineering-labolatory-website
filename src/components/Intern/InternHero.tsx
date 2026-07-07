@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { INTERN_REGISTRATION_OPEN } from '@/lib/constants';
 import Wrapper from '@/components/_shared/Wrapper';
 import Button from '@/components/_shared/Button';
 
@@ -26,14 +27,24 @@ export default function InternHero() {
             langsung mengerjakan proyek real-world seru di bidang Software
             Engineering dan Game Development.
           </p>
-          <Link href='/intern/register'>
-            <Button
-              colorType='primary'
-              className='!w-auto !rounded-lg !px-8 !py-4 !text-base md:!text-lg font-bold shadow-md hover:scale-[1.02] transition-transform'
-            >
-              Daftar Intern Sekarang!!
-            </Button>
-          </Link>
+            {INTERN_REGISTRATION_OPEN ? (
+              <Link href='/intern/register'>
+                <Button
+                  colorType='primary'
+                  className='!w-auto !rounded-lg !px-8 !py-4 !text-base md:!text-lg font-bold shadow-md hover:scale-[1.02] transition-transform'
+                >
+                  Daftar Intern Sekarang!!
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                colorType='primary'
+                className='!w-auto !rounded-lg !px-8 !py-4 !text-base md:!text-lg font-bold shadow-md hover:scale-[1.02] transition-transform opacity-70 cursor-not-allowed'
+                disabled
+              >
+                Pendaftaran Telah Ditutup
+              </Button>
+            )}
         </div>
       </Wrapper>
     </section>

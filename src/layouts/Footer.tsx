@@ -28,6 +28,11 @@ export default function Footer() {
               <div className='flex items-center gap-3'>
                 {[
                   {
+                    name: 'Rifky',
+                    image: '/images/devs/rifky_fe.svg',
+                    linkedin: 'https://www.linkedin.com/in/rifkymprayudhi',
+                  },
+                  {
                     name: 'Edsel',
                     image: '/images/devs/adsel_uiux.svg',
                     linkedin: 'https://www.linkedin.com/in/edselspth',
@@ -37,11 +42,6 @@ export default function Footer() {
                     image: '/images/devs/alvin_be.svg',
                     linkedin:
                       'https://www.linkedin.com/in/muhammad-alvin-ababil-7406592a2',
-                  },
-                  {
-                    name: 'Rifky',
-                    image: '/images/devs/rifky_fe.svg',
-                    linkedin: 'https://www.linkedin.com/in/rifkymprayudhi',
                   },
                 ].map((dev, index) => (
                   <a

@@ -19,7 +19,7 @@ type MasterData = {
   fakultas: { id_fakultas: number; nama: string }[];
   divisi: { id_divisi: number; nama: string }[];
   prodi: { id_prodi: number; nama: string; id_fakultas: number }[];
-}
+};
 
 type FormState = {
   nim: string;
@@ -47,10 +47,58 @@ const initialForm: FormState = {
   linkPortofolio: '',
 };
 
+import { INTERN_REGISTRATION_OPEN } from '@/lib/constants';
+
 export default function InternRegisterPage() {
   const [form, setForm] = useState<FormState>(initialForm);
   const [submitted, setSubmitted] = useState(false);
-  
+
+  if (!INTERN_REGISTRATION_OPEN) {
+    return (
+      <div className='min-h-[calc(100vh-400px)] bg-white py-24 flex items-center justify-center'>
+        <Wrapper className='flex flex-col items-center text-center'>
+          <h1 className='text-3xl md:text-4xl font-bold text-primary mb-3'>
+            Pendaftaran Internship Ditutup
+          </h1>
+          <p className='text-lg md:text-xl font-bold text-neutral-900 mb-16'>
+            Terima kasih atas antusiasmenya. Sampai jumpa di pendaftaran
+            berikutnya!
+          </p>
+          {/* Logo Section */}
+          <div className='flex flex-col md:flex-row items-center gap-4 md:gap-6'>
+            <Image
+              src='/Images/logo-coloured.svg'
+              alt='ASE Laboratory Logo'
+              width={160}
+              height={160}
+              className='w-24 h-24 md:w-40 md:h-40'
+            />
+            <div className='text-center md:text-left'>
+              <p className='text-neutral-900 font-bold text-2xl md:text-4xl leading-[1.1] tracking-tight'>
+                Advanced <br className='hidden md:block' />
+                Software <br className='hidden md:block' />
+                Engineering
+              </p>
+              <p className='text-neutral-500 text-xs md:text-base tracking-[0.2em] font-medium mt-2 md:mt-2'>
+                LABORATORY
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href='/intern'
+            className='mt-12 group relative overflow-hidden h-14 px-8 rounded-2xl bg-neutral-950 text-white font-bold text-sm tracking-wide transition-all duration-300 flex items-center justify-center'
+          >
+            <span className='relative z-10 flex items-center justify-center gap-3'>
+              <FiArrowLeft className='text-lg transition-transform duration-300 group-hover:-translate-x-1' />
+              Kembali
+            </span>
+          </Link>
+        </Wrapper>
+      </div>
+    );
+  }
+
   const [masterData, setMasterData] = useState<MasterData>({
     fakultas: [],
     divisi: [],
@@ -64,7 +112,7 @@ export default function InternRegisterPage() {
         const response = await fetch('/api/fakultas');
         const result = await response.json();
 
-        console.log("Cek Hasil dari API Master Data: ", result);
+        console.log('Cek Hasil dari API Master Data: ', result);
 
         if (result.success) {
           setMasterData({
@@ -72,9 +120,9 @@ export default function InternRegisterPage() {
             divisi: result.data.divisi,
             prodi: result.data.prodi,
           });
-        } 
+        }
       } catch (error) {
-        console.error("Error fetching master data: ", error);
+        console.error('Error fetching master data: ', error);
       }
     };
     fetchMasterData();
@@ -109,38 +157,36 @@ export default function InternRegisterPage() {
       portofolio: form.linkPortofolio,
       id_divisi_1: form.divisi1,
       id_divisi_2: form.divisi2,
-    }
-    try { 
-        const response = fetch('/api/registrasi', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },  
-          body: JSON.stringify(payload),
+    };
+    try {
+      const response = fetch('/api/registrasi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
       setSubmitted(true);
-      
     } catch (error) {
-        console.error("Error submitting form: ", error);
+      console.error('Error submitting form: ', error);
     }
-    
   };
 
   // Array for Options Selections
-  const  divisiOptions = masterData.divisi.map((d) => ({
+  const divisiOptions = masterData.divisi.map((d) => ({
     value: d.id_divisi.toString(),
     label: d.nama,
-  }))
+  }));
 
   const fakultasOptions = masterData.fakultas.map((f) => ({
     value: f.id_fakultas.toString(),
     label: f.nama,
-  }))
+  }));
 
   const prodiOptions = masterData.prodi
     .filter((p) => p.id_fakultas.toString() === form.fakultas)
     .map((p) => ({
       value: p.nama,
       label: p.nama,
-    }))
+    }));
 
   if (submitted) {
     return (
@@ -155,23 +201,23 @@ export default function InternRegisterPage() {
           </p>
 
           {/* Logo Section */}
-          <div className='flex items-center gap-6'>
+          <div className='flex flex-col md:flex-row items-center gap-4 md:gap-6'>
             <Image
               src='/Images/logo-coloured.svg'
               alt='ASE Laboratory Logo'
               width={160}
               height={160}
-              className='w-32 h-32 md:w-40 md:h-40'
+              className='w-24 h-24 md:w-40 md:h-40'
             />
 
-            <div className='text-left'>
-              <p className='text-neutral-900 font-bold text-3xl md:text-4xl leading-[1.1] tracking-tight'>
-                Advanced <br />
-                Software <br />
+            <div className='text-center md:text-left'>
+              <p className='text-neutral-900 font-bold text-2xl md:text-4xl leading-[1.1] tracking-tight'>
+                Advanced <br className='hidden md:block' />
+                Software <br className='hidden md:block' />
                 Engineering
               </p>
 
-              <p className='text-neutral-500 text-sm md:text-base tracking-[0.2em] font-medium mt-2'>
+              <p className='text-neutral-500 text-xs md:text-base tracking-[0.2em] font-medium mt-2 md:mt-2'>
                 LABORATORY
               </p>
             </div>
