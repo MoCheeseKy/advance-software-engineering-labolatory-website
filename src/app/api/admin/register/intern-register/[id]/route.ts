@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { verifyToken } from "@/lib/auth";
 
-
 export async function GET(request: Request, { params }: { params: { id: string } | Promise<{ id: string }> }) {
     try {
         // Authentication check
@@ -81,7 +80,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
         const body = await request.json();
 
-        if ('status' in body && typeof body.status !== 'boolean') {
+        const validStatuses = ['PENDING', 'ACCEPTED', 'REJECTED'];
+        if ('status' in body && !validStatuses.includes(body.status)) {
             return NextResponse.json(
                 { success: false, message: "Status Invalid" },
                 { status: 400 }

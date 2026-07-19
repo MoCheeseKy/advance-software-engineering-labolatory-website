@@ -10,7 +10,10 @@ type Registration = {
   prodi: string;
   angkatan: number | string;
   divisi1: string;
+  divisi1_id: number | null;
   divisi2: string;
+  divisi2_id: number | null;
+  divisi_diterima_id: number | null; // <-- BARU: Untuk menyimpan ID divisi yang lulus
   cv: string;
   motivationLetter: string;
   portofolio: string;
@@ -24,10 +27,14 @@ export default function AdminInternRegistrationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // State untuk mencegah multiple klik saat submit action
+  // States untuk loading action
   const [actionLoading, setActionLoading] = useState(false);
   const [viewLoading, setViewLoading] = useState<number | null>(null);
+  const [acceptLoading, setAcceptLoading] = useState<number | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  
+  // Pilihan divisi saat accept
+  const [selectedDivisiId, setSelectedDivisiId] = useState<number | null>(null);
   
   // Modal states
   const [modalConfig, setModalConfig] = useState<{
@@ -40,7 +47,13 @@ export default function AdminInternRegistrationPage() {
     data: null
   });
 
-  // Fetch data dari backend
+  const formatStatusDisplay = (statusStr: string) => {
+    if (statusStr === 'ACCEPTED') return 'Accepted';
+    if (statusStr === 'REJECTED') return 'Rejected';
+    return 'Pending';
+  };
+
+  // Fetch data list dari backend
   useEffect(() => {
     async function fetchRegistrations() {
       try {
@@ -52,11 +65,9 @@ export default function AdminInternRegistrationPage() {
         
         if (!res.ok) throw new Error(data.message ?? 'Failed to fetch registrations');
         
-        // Format data Backend 
         const formattedData: Registration[] = (data.data || []).map((reg: any) => {
-          const status = reg.status === true ? 'Accepted' : 'Not Accepted';
-          const divisi1 = reg.dataDivisi?.find((d: any) => d.pilihan === 1)?.divisi?.nama ?? '-';
-          const divisi2 = reg.dataDivisi?.find((d: any) => d.pilihan === 2)?.divisi?.nama ?? '-';
+          const div1 = reg.dataDivisi?.find((d: any) => d.pilihan == 1);
+          const div2 = reg.dataDivisi?.find((d: any) => d.pilihan == 2);
 
           return {
             id: reg.id_registrasi,
@@ -65,12 +76,15 @@ export default function AdminInternRegistrationPage() {
             fakultas: reg.prodi?.fakultas?.nama ?? '-',
             prodi: reg.prodi?.nama ?? '-',
             angkatan: reg.angkatan ?? '-',
-            divisi1,
-            divisi2,
+            divisi1: div1?.divisi?.nama ?? '-',
+            divisi1_id: div1?.id_divisi ?? null,
+            divisi2: div2?.divisi?.nama ?? '-',
+            divisi2_id: div2?.id_divisi ?? null,
+            divisi_diterima_id: reg.id_divisi_diterima ?? null, // Ambil id_divisi_diterima dari backend
             cv: reg.cv ?? '',
             motivationLetter: reg.motivationLetter ?? '',
             portofolio: reg.portofolio ?? '',
-            status,
+            status: formatStatusDisplay(reg.status),
             date: reg.createdAt
               ? new Date(reg.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
               : 'N/A',
@@ -103,6 +117,9 @@ export default function AdminInternRegistrationPage() {
       if (!res.ok) throw new Error(data.message ?? 'Gagal mengambil detail');
 
       const r = data.data;
+      const div1 = r.dataDivisi?.find((d: any) => d.pilihan == 1);
+      const div2 = r.dataDivisi?.find((d: any) => d.pilihan == 2);
+
       const detail: Registration = {
         id: r.id_registrasi,
         nim: r.nim,
@@ -110,12 +127,15 @@ export default function AdminInternRegistrationPage() {
         fakultas: r.prodi?.fakultas?.nama ?? '-',
         prodi: r.prodi?.nama ?? '-',
         angkatan: r.angkatan ?? '-',
-        divisi1: r.dataDivisi?.find((d: any) => d.pilihan === 1)?.divisi?.nama ?? '-',
-        divisi2: r.dataDivisi?.find((d: any) => d.pilihan === 2)?.divisi?.nama ?? '-',
+        divisi1: div1?.divisi?.nama ?? '-',
+        divisi1_id: div1?.id_divisi ?? null,
+        divisi2: div2?.divisi?.nama ?? '-',
+        divisi2_id: div2?.id_divisi ?? null,
+        divisi_diterima_id: r.id_divisi_diterima ?? null, // Ambil id_divisi_diterima dari backend
         cv: r.cv ?? '',
         motivationLetter: r.motivationLetter ?? '',
         portofolio: r.portofolio ?? '',
-        status: r.status === true ? 'Accepted' : 'Not Accepted',
+        status: formatStatusDisplay(r.status),
         date: r.createdAt
           ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
           : 'N/A',
@@ -124,22 +144,61 @@ export default function AdminInternRegistrationPage() {
 
     } catch (err: any) {
       alert(err.message || 'Gagal mengambil detail registrasi');
-
     } finally {
       setViewLoading(null);
+    }
+  };
+
+  // Fetch detail data dulu sebelum membuka modal Accept
+  const openAcceptModal = async (reg: Registration) => {
+    setAcceptLoading(reg.id);
+    try {
+      const res = await fetch(`/api/admin/register/intern-register/${reg.id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message ?? 'Gagal mengambil detail untuk konfirmasi');
+
+      const r = data.data;
+
+      const div1 = r.dataDivisi?.find((d: any) => d.pilihan == 1);
+      const div2 = r.dataDivisi?.find((d: any) => d.pilihan == 2);
+
+      const detail: Registration = {
+        ...reg,
+        divisi1: div1?.divisi?.nama ?? 'Nama Divisi Tidak Ditemukan',
+        divisi1_id: div1?.id_divisi ?? null,
+        divisi2: div2?.divisi?.nama ?? 'Nama Divisi Tidak Ditemukan',
+        divisi2_id: div2?.id_divisi ?? null,
+      };
+
+      setModalConfig({ isOpen: true, type: 'accept', data: detail });
+      setSelectedDivisiId(detail.divisi1_id || detail.divisi2_id);
+
+    } catch (err: any) {
+      alert(err.message || 'Gagal mengambil detail registrasi');
+    } finally {
+      setAcceptLoading(null);
     }
   };
 
   const closeModal = () => {
     if (actionLoading) return;
     setModalConfig({ isOpen: false, type: null, data: null });
+    setSelectedDivisiId(null);
   };
 
   const confirmAction = async () => {
     if (!modalConfig.data) return;
     
     const isAccept = modalConfig.type === 'accept';
-    const newStatusStr = isAccept ? 'Accepted' : 'Not Accepted';
+    
+    if (isAccept && !selectedDivisiId) {
+      alert("Pilih divisi penempatan terlebih dahulu!");
+      return;
+    }
+
+    const payload = isAccept 
+      ? { status: 'ACCEPTED', id_divisi_diterima: selectedDivisiId } 
+      : { status: 'REJECTED' };
 
     try {
       setActionLoading(true);
@@ -148,7 +207,7 @@ export default function AdminInternRegistrationPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ status: isAccept })
+        body: JSON.stringify(payload)
       });
       
       const data = await res.json();
@@ -157,8 +216,15 @@ export default function AdminInternRegistrationPage() {
         throw new Error(data.message || 'Gagal memperbarui status registrasi');
       }
 
+      const newStatusStr = isAccept ? 'Accepted' : 'Rejected';
+
+      // Update tabel list dengan data terbaru (termasuk divisi_diterima_id agar tidak perlu refresh halaman)
       setRegistrations(prev => 
-        prev.map(reg => reg.id === modalConfig.data!.id ? { ...reg, status: newStatusStr } : reg)
+        prev.map(reg => reg.id === modalConfig.data!.id ? { 
+          ...reg, 
+          status: newStatusStr,
+          divisi_diterima_id: isAccept ? selectedDivisiId : null
+        } : reg)
       );
       
       closeModal();
@@ -170,7 +236,6 @@ export default function AdminInternRegistrationPage() {
     }
   };
 
-  // Handle Export Excel
   const handleExportExcel = async () => {
     try {
       setIsExporting(true);
@@ -215,7 +280,6 @@ export default function AdminInternRegistrationPage() {
           <p className="text-gray-500 mt-1">Review and manage intern applications.</p>
         </div>
         
-        {/* Tombol Export */}
         <button
           onClick={handleExportExcel}
           disabled={isExporting}
@@ -233,8 +297,6 @@ export default function AdminInternRegistrationPage() {
       )}
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-
-        {/* Search Bar */}
         <div className="p-4 border-b border-gray-100 bg-gray-50/50">
           <div className="relative max-w-md">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -245,7 +307,7 @@ export default function AdminInternRegistrationPage() {
               placeholder="Search by name, NIM, or division..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all sm:text-sm text-black"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all sm:text-sm text-black"
             />
           </div>
         </div>
@@ -278,19 +340,27 @@ export default function AdminInternRegistrationPage() {
                       <td className="p-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                           reg.status === 'Accepted' ? 'bg-green-100 text-green-700 border border-green-200' :
-                          'bg-red-100 text-red-700 border border-red-200'
+                          reg.status === 'Rejected' ? 'bg-red-100 text-red-700 border border-red-200' :
+                          'bg-yellow-100 text-yellow-700 border border-yellow-200'
                         }`}>
                           {reg.status}
                         </span>
                       </td>
                       <td className="p-4 text-right">
                         <div className="flex justify-end gap-2">
-                          <button onClick={() => openDetail(reg)} disabled={viewLoading === reg.id} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors border border-transparent hover:border-blue-200 disabled:opacity-50" title="View Details">
+                          <button onClick={() => openDetail(reg)} disabled={viewLoading === reg.id || acceptLoading === reg.id} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors border border-transparent hover:border-blue-200 disabled:opacity-50" title="View Details">
                             {viewLoading === reg.id ? <FiLoader className="animate-spin" /> : <FiEye />}
                           </button>
-                          <button onClick={() => setModalConfig({ isOpen: true, type: 'accept', data: reg })} className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors border border-transparent hover:border-green-200" title="Accept">
-                            <FiCheckCircle />
+                          
+                          <button 
+                            onClick={() => openAcceptModal(reg)} 
+                            disabled={acceptLoading === reg.id || viewLoading === reg.id}
+                            className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors border border-transparent hover:border-green-200 disabled:opacity-50" 
+                            title="Accept"
+                          >
+                            {acceptLoading === reg.id ? <FiLoader className="animate-spin" /> : <FiCheckCircle />}
                           </button>
+                          
                           <button onClick={() => setModalConfig({ isOpen: true, type: 'reject', data: reg })} className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors border border-transparent hover:border-red-200" title="Reject">
                             <FiXCircle />
                           </button>
@@ -311,12 +381,10 @@ export default function AdminInternRegistrationPage() {
         </div>
       </div>
 
-      {/* Custom Modal Overlay */}
       {modalConfig.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
             
-            {/* Modal Header */}
             <div className="flex justify-between items-center p-5 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-800">
                 {modalConfig.type === 'view' ? 'Intern Details' : 
@@ -332,22 +400,21 @@ export default function AdminInternRegistrationPage() {
               </button>
             </div>
 
-            {/* Modal Body */}
             <div className="p-6">
               {modalConfig.type === 'view' && modalConfig.data && (
                 <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
                   
-                  {/* Status badge */}
                   <div className="flex items-center justify-between pb-3 border-b border-gray-100">
                     <span className="text-sm text-gray-500 font-medium">Status</span>
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      modalConfig.data.status === 'Accepted' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      modalConfig.data.status === 'Accepted' ? 'bg-green-100 text-green-700' : 
+                      modalConfig.data.status === 'Rejected' ? 'bg-red-100 text-red-700' :
+                      'bg-yellow-100 text-yellow-700'
                     }`}>
                       {modalConfig.data.status}
                     </span>
                   </div>
 
-                  {/* Data Pribadi */}
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Data Pribadi</p>
                   <DetailRow label="Nama Lengkap" value={modalConfig.data.name} />
                   <DetailRow label="NIM" value={modalConfig.data.nim} />
@@ -355,12 +422,20 @@ export default function AdminInternRegistrationPage() {
                   <DetailRow label="Fakultas" value={modalConfig.data.fakultas} />
                   <DetailRow label="Program Studi" value={modalConfig.data.prodi} />
 
-                  {/* Pilihan Divisi */}
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider pt-2">Pilihan Divisi</p>
-                  <DetailRow label="Divisi Pilihan 1" value={modalConfig.data.divisi1} />
-                  <DetailRow label="Divisi Pilihan 2" value={modalConfig.data.divisi2} />
+                  
+                  {/* UPDATE: Menggunakan DivisionRow untuk menampilkan badge Accepted pada divisi yang bersangkutan */}
+                  <DivisionRow 
+                    label="Divisi Pilihan 1" 
+                    value={modalConfig.data.divisi1} 
+                    isAccepted={modalConfig.data.status === 'Accepted' && modalConfig.data.divisi_diterima_id === modalConfig.data.divisi1_id} 
+                  />
+                  <DivisionRow 
+                    label="Divisi Pilihan 2" 
+                    value={modalConfig.data.divisi2} 
+                    isAccepted={modalConfig.data.status === 'Accepted' && modalConfig.data.divisi_diterima_id === modalConfig.data.divisi2_id} 
+                  />
 
-                  {/* Dokumen */}
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider pt-2">Dokumen</p>
                   <DocLink label="CV" url={modalConfig.data.cv} />
                   <DocLink label="Motivation Letter" url={modalConfig.data.motivationLetter} />
@@ -368,25 +443,72 @@ export default function AdminInternRegistrationPage() {
                     <DocLink label="Portofolio" url={modalConfig.data.portofolio} />
                   )}
 
-                  {/* Tanggal */}
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider pt-2">Lainnya</p>
                   <DetailRow label="Tanggal Daftar" value={modalConfig.data.date} />
                 </div>
               )}
 
-              {(modalConfig.type === 'accept' || modalConfig.type === 'reject') && modalConfig.data && (
+              {modalConfig.type === 'accept' && modalConfig.data && (
                 <div className="text-gray-600 leading-relaxed">
-                  Are you sure you want to <span className={`font-bold ${modalConfig.type === 'accept' ? 'text-green-600' : 'text-red-600'}`}>
-                    {modalConfig.type === 'accept' ? 'ACCEPT' : 'REJECT'}
-                  </span> <strong>{modalConfig.data.name}</strong> for the {modalConfig.data.divisi1} position?
-                  {modalConfig.type === 'reject' && (
-                    <p className="mt-2 text-sm text-red-500">This action cannot be undone and an automated email will be sent.</p>
-                  )}
+                  <p className="mb-4">Pilih divisi penempatan untuk <strong className="text-gray-900">{modalConfig.data.name}</strong>:</p>
+                  
+                  <div className="flex flex-col gap-3 mt-3">
+                    {modalConfig.data?.divisi1_id != null && (
+                      <label 
+                        className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-all ${
+                          selectedDivisiId === modalConfig.data?.divisi1_id 
+                            ? 'border-green-500 bg-green-50' 
+                            : 'border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="divisi_penempatan"
+                          value={modalConfig.data?.divisi1_id}
+                          checked={selectedDivisiId === modalConfig.data?.divisi1_id}
+                          onChange={() => setSelectedDivisiId(modalConfig.data!.divisi1_id as number)}
+                          className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
+                        />
+                        <span className="text-gray-700 font-medium">
+                          Pilihan 1: {modalConfig.data?.divisi1}
+                        </span>
+                      </label>
+                    )}
+                    
+                    {modalConfig.data?.divisi2_id != null && (
+                      <label 
+                        className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-all ${
+                          selectedDivisiId === modalConfig.data?.divisi2_id 
+                            ? 'border-green-500 bg-green-50' 
+                            : 'border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="divisi_penempatan"
+                          value={modalConfig.data?.divisi2_id}
+                          checked={selectedDivisiId === modalConfig.data?.divisi2_id}
+                          onChange={() => setSelectedDivisiId(modalConfig.data!.divisi2_id as number)}
+                          className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300"
+                        />
+                        <span className="text-gray-700 font-medium">
+                          Pilihan 2: {modalConfig.data?.divisi2}
+                        </span>
+                      </label>
+                    )}
+                  </div>
+                  
+                </div>
+              )}
+
+              {modalConfig.type === 'reject' && modalConfig.data && (
+                <div className="text-gray-600 leading-relaxed">
+                  Are you sure you want to <span className="font-bold text-red-600">REJECT</span> <strong>{modalConfig.data.name}</strong>?
+                  <p className="mt-2 text-sm text-red-500">This action cannot be undone.</p>
                 </div>
               )}
             </div>
 
-            {/* Modal Footer */}
             <div className="p-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
               <button 
                 onClick={closeModal} 
@@ -399,8 +521,8 @@ export default function AdminInternRegistrationPage() {
               {modalConfig.type === 'accept' && (
                 <button 
                   onClick={confirmAction}
-                  disabled={actionLoading}
-                  className="px-5 py-2 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors shadow-sm disabled:opacity-70 flex items-center gap-2"
+                  disabled={actionLoading || !selectedDivisiId}
+                  className="px-5 py-2 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {actionLoading && <FiLoader className="animate-spin" />}
                   Yes, Accept
@@ -431,6 +553,23 @@ function DetailRow({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between items-start gap-4">
       <span className="text-sm text-gray-500 font-medium shrink-0">{label}</span>
       <span className="text-sm font-semibold text-gray-800 text-right">{value || '-'}</span>
+    </div>
+  );
+}
+
+// KOMPONEN BARU: Digunakan khusus untuk merender list divisi beserta Badge-nya jika lolos
+function DivisionRow({ label, value, isAccepted }: { label: string; value: string; isAccepted: boolean }) {
+  return (
+    <div className="flex justify-between items-start gap-4">
+      <span className="text-sm text-gray-500 font-medium shrink-0">{label}</span>
+      <div className="flex items-center gap-2 text-right">
+        {isAccepted && (
+          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-700 border border-green-200 uppercase">
+            Accepted
+          </span>
+        )}
+        <span className="text-sm font-semibold text-gray-800">{value || '-'}</span>
+      </div>
     </div>
   );
 }
