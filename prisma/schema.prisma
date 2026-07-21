@@ -1,14 +1,23 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 datasource db {
   provider = "postgresql" 
 }
 
 generator client {
   provider = "prisma-client-js"
+}
+
+enum TipeMember {
+  INTERN
+  MEMBER
+}
+
+enum StatusRegistrasi {
+  PENDING
+  ACCEPTED
+  REJECTED
 }
 
 model Fakultas {
@@ -28,6 +37,7 @@ model Prodi {
   fakultas    Fakultas     @relation(fields: [id_fakultas], references: [id_fakultas])
 
   registrasi  Registrasi[]
+  members     Member[]
 
   @@map("prodi") 
 }
@@ -37,6 +47,10 @@ model Divisi {
   nama        String
   
   dataDivisi  DataDivisi[]
+  
+  pendaftarDiterima Registrasi[] @relation("DivisiDiterima")
+  
+  members     Member[]
 
   @@map("divisi")
 }
@@ -44,19 +58,44 @@ model Divisi {
 model Registrasi {
   id_registrasi    Int      @id @default(autoincrement())
   id_prodi         Int
-  nim              String   
+  nim              String  
   nama             String
   angkatan         Int
   cv               String   @db.Text
   motivationLetter String   @map("motivation-letter") @db.Text
   portofolio       String   @db.Text
-  status           Boolean
-  
+  status           StatusRegistrasi @default(PENDING)
+  id_divisi_diterima Int?
+
+  divisiDiterima   Divisi?  @relation("DivisiDiterima", fields: [id_divisi_diterima], references: [id_divisi])
   prodi            Prodi    @relation(fields: [id_prodi], references: [id_prodi])
   
   dataDivisi       DataDivisi[]
+  
+  member           Member?
 
   @@map("registrasi")
+}
+
+model Member {
+  id_member     Int         @id @default(autoincrement())
+  id_registrasi Int?        @unique 
+  
+  nim           String      @unique 
+  nama          String      
+  angkatan      Int         
+  id_prodi      Int         
+  id_divisi     Int
+  
+  tim           String?    
+  
+  tipe_member   TipeMember  @default(INTERN) 
+  
+  registrasi    Registrasi? @relation(fields: [id_registrasi], references: [id_registrasi], onDelete: SetNull)
+  prodi         Prodi       @relation(fields: [id_prodi], references: [id_prodi])
+  divisi        Divisi      @relation(fields: [id_divisi], references: [id_divisi])
+
+  @@map("member")
 }
 
 model DataDivisi {
