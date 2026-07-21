@@ -3,10 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { verifyToken } from "@/lib/auth";
 
-
 export async function GET(request: Request, { params }: { params: { id: string } | Promise<{ id: string }> }) {
     try {
-        // Authentication check
+        // Authentication Check
         const cookie = await cookies();
         const session = cookie.get('session')?.value;
  
@@ -21,7 +20,6 @@ export async function GET(request: Request, { params }: { params: { id: string }
             return NextResponse.json({ success: false, message: "ID Pendaftar tidak valid" }, { status: 400 });
         }
  
-        // Verify the token
         try {
             await verifyToken(session);
         } catch (error) {
@@ -36,7 +34,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
                 },
                 dataDivisi: {
                     include: { divisi: true }
-                }
+                },
+                member: true 
             }
         });
  
@@ -46,17 +45,15 @@ export async function GET(request: Request, { params }: { params: { id: string }
  
         return NextResponse.json({ success: true, data: registrasi }, { status: 200 });
     }
- 
+    
     catch (error) {
         console.error("Error fetching registrasi: ", error);
         return NextResponse.json({ success: false, message: "Failed to fetch registrasi" }, { status: 500 });
     }
 }
 
-// Put function to update registrasi data based on id
 export async function PUT(request: Request, { params }: { params: { id: string } | Promise<{ id: string }> }) {
     try {
-        // Authentication check
         const cookie = await cookies();
         const session = cookie.get('session')?.value;
 
@@ -71,34 +68,67 @@ export async function PUT(request: Request, { params }: { params: { id: string }
              return NextResponse.json({ success: false, message: "ID Pendaftar tidak valid" }, { status: 400 });
         }
 
-        // Verify the token
         try {
             await verifyToken(session);
-
         } catch (error) {
             return NextResponse.json({ success: false, message: "Invalid or expired token" }, { status: 401 });
         }
 
         const body = await request.json();
+        const { status, id_divisi_diterima, tim } = body;
 
-        if ('status' in body && typeof body.status !== 'boolean') {
+        const validStatuses = ['PENDING', 'ACCEPTED', 'REJECTED'];
+        if (status && !validStatuses.includes(status)) {
             return NextResponse.json(
                 { success: false, message: "Status Invalid" },
                 { status: 400 }
             );
         }
 
-        const updatedRegistrasi = await prisma.registrasi.update({
-            where: { id_registrasi: id },
-            data: body,
+        const updatedRegistrasi = await prisma.$transaction(async (tx) => {
+            const reg = await tx.registrasi.update({
+                where: { id_registrasi: id },
+                data: {
+                    status: status,
+                    id_divisi_diterima: status === 'ACCEPTED' ? id_divisi_diterima : null
+                },
+                include: { prodi: true } 
+            });
+
+            if (status === 'ACCEPTED') {
+                if (!id_divisi_diterima) throw new Error("Divisi diterima harus diisi");
+                
+                await tx.member.upsert({
+                    where: { id_registrasi: id },
+                    update: {
+                        id_divisi: id_divisi_diterima,
+                        tim: tim || null,
+                    },
+                    create: {
+                        id_registrasi: id,
+                        nim: reg.nim,
+                        nama: reg.nama,
+                        angkatan: reg.angkatan,
+                        id_prodi: reg.id_prodi,
+                        id_divisi: id_divisi_diterima,
+                        tim: tim || null,
+                        tipe_member: 'INTERN',
+                    }
+                });
+            } else {
+                await tx.member.deleteMany({
+                    where: { id_registrasi: id }
+                });
+            }
+
+            return reg;
         });
 
         return NextResponse.json({ success: true, message: "Registrasi updated successfully", data: updatedRegistrasi }, { status: 200 });
     }
-
-    catch (error) {
+    catch (error: any) {
         console.error("Error updating registrasi: ", error);
-        return NextResponse.json({ success: false, message: "Failed to update registrasi" }, { status: 500 });
+        return NextResponse.json({ success: false, message: error.message || "Failed to update registrasi" }, { status: 500 });
     }
 }
 

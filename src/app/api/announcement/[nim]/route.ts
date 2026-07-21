@@ -12,6 +12,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ nim:
                 nim: true,
                 nama: true,
                 status: true,
+                divisiDiterima: { 
+                    select: {
+                        nama: true,
+                    }
+                },
+                member: { 
+                    select: {
+                        tim: true,
+                    }
+                }
             }
         });
 
@@ -26,11 +36,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ nim:
                 nim: registrant.nim,
                 nama: registrant.nama,
                 status: registrant.status,
+                divisi_diterima: registrant.divisiDiterima?.nama || null, 
+                tim_intern: registrant.member?.tim || null,
             }
         }, { status: 200 });
-    }
-
-    catch (error) {
+    } catch (error) {
         console.error("Error GET Registrant: ", error);
         return NextResponse.json({ success: false, message: "Failed to fetch registrant data" }, { status: 500 });
     }
