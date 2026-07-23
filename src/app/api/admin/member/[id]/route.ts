@@ -93,8 +93,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
             data: {
                 id_divisi: id_divisi !== undefined ? id_divisi : undefined,
                 tim: tim !== undefined ? tim : undefined,
-                tipe_member: tipe_member !== undefined ? tipe_member : undefined,
-                status_aktif: status_aktif !== undefined ? status_aktif : undefined,
+                tipe_member: tipe_member !== undefined ? tipe_member : undefined
             },
             include: {
                 divisi: true
