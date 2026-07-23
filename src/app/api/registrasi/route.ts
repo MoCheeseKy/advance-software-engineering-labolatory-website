@@ -96,7 +96,7 @@ export async function POST(request: Request) {
                     cv: body.cv,
                     motivationLetter: body.motivationLetter,
                     portofolio: body.portofolio,
-                    status: false,
+                    status: "PENDING",
                 },
             });
 
