@@ -35,7 +35,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
                 dataDivisi: {
                     include: { divisi: true }
                 },
-                member: true 
+                member: {
+                    include: { mentor: true }
+                }
             }
         });
  
@@ -75,7 +77,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         }
 
         const body = await request.json();
-        const { status, id_divisi_diterima, tim } = body;
+        const { status, id_divisi_diterima, id_mentor } = body;
 
         const validStatuses = ['PENDING', 'ACCEPTED', 'REJECTED'];
         if (status && !validStatuses.includes(status)) {
@@ -102,7 +104,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
                     where: { id_registrasi: id },
                     update: {
                         id_divisi: id_divisi_diterima,
-                        tim: tim || null,
+                        id_mentor: id_mentor || null,
                     },
                     create: {
                         id_registrasi: id,
@@ -111,7 +113,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
                         angkatan: reg.angkatan,
                         id_prodi: reg.id_prodi,
                         id_divisi: id_divisi_diterima,
-                        tim: tim || null,
+                        id_mentor: id_mentor || null,
                         tipe_member: 'INTERN',
                     }
                 });

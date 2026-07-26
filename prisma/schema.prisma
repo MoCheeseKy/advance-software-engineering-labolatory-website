@@ -87,13 +87,14 @@ model Member {
   id_prodi      Int         
   id_divisi     Int
   
-  tim           String?    
+  id_mentor     Int?    
   
   tipe_member   TipeMember  @default(INTERN) 
   
   registrasi    Registrasi? @relation(fields: [id_registrasi], references: [id_registrasi], onDelete: SetNull)
   prodi         Prodi       @relation(fields: [id_prodi], references: [id_prodi])
   divisi        Divisi      @relation(fields: [id_divisi], references: [id_divisi])
+  mentor        Mentor?     @relation(fields: [id_mentor], references: [id_mentor], onDelete: SetNull)
 
   @@map("member")
 }
@@ -152,4 +153,23 @@ model Product{
   admin         Admin    @relation(fields:[id_admin], references:[id_admin])
 
   @@map("product")
+}
+
+model SystemSetting {
+  id        Int       @id @default(autoincrement())
+  type      String    @unique
+  isActive  Boolean   @default(false)
+  startDate DateTime?
+  endDate   DateTime?
+
+  @@map("system_setting")
+}
+
+model Mentor {
+  id_mentor    Int       @id @default(autoincrement())
+  nama         String
+  link_profile String?
+  members      Member[]
+
+  @@map("mentor")
 }

@@ -33,7 +33,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
                     include: { fakultas: true }
                 },
                 divisi: true,
-                registrasi: true 
+                registrasi: true,
+                mentor: true
             }
         });
  
@@ -75,7 +76,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         const body = await request.json();
         
         // Ekstrak data yang boleh di-edit dari body request
-        const { id_divisi, tim, tipe_member, status_aktif } = body;
+        const { id_divisi, id_mentor, tipe_member, status_aktif } = body;
 
         // Validasi input enum/opsi
         const validTipeMember = ['INTERN', 'MEMBER'];
@@ -92,7 +93,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
             where: { id_member: id },
             data: {
                 id_divisi: id_divisi !== undefined ? id_divisi : undefined,
-                tim: tim !== undefined ? tim : undefined,
+                id_mentor: id_mentor !== undefined ? id_mentor : undefined,
                 tipe_member: tipe_member !== undefined ? tipe_member : undefined
             },
             include: {

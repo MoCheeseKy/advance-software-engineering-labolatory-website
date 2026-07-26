@@ -37,7 +37,8 @@ export async function GET(request: Request) {
                     include: { fakultas: true }
                 },
                 divisi: true,
-                registrasi: true 
+                registrasi: true,
+                mentor: true
             },
         });
 

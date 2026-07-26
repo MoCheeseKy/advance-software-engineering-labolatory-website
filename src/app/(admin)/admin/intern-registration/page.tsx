@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   FiEye, FiCheckCircle, FiSearch, FiX, FiLoader, FiDownload, FiEdit, 
-  FiUserPlus, FiUser, FiAward, FiUsers 
+  FiUserPlus, FiUser, FiAward, FiUsers, FiSettings
 } from 'react-icons/fi';
 
 type Registration = {
@@ -22,7 +22,8 @@ type Registration = {
   portofolio: string;
   status: string;
   date: string;
-  tim?: string; 
+  id_mentor?: number | null;
+  mentor_nama?: string | null;
 };
 
 type MemberData = {
@@ -33,23 +34,28 @@ type MemberData = {
   prodi: string;
   fakultas: string;
   divisi: string;
-  tim: string | null;
+  id_mentor: number | null;
+  mentor_nama: string | null;
   tipe_member: 'INTERN' | 'MEMBER';
   createdAt: string;
 };
 
 export default function AdminUnifiedManagementPage() {
   // Main View State
-  const [activeTab, setActiveTab] = useState<'REGISTER' | 'INTERN' | 'MEMBER'>('REGISTER');
+  const [activeTab, setActiveTab] = useState<'REGISTER' | 'INTERN' | 'MEMBER' | 'MENTORS' | 'SETTINGS'>('REGISTER');
   const [search, setSearch] = useState('');
   
   // Data States
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [members, setMembers] = useState<MemberData[]>([]);
+  const [settings, setSettings] = useState<any[]>([]);
+  const [mentors, setMentors] = useState<any[]>([]);
   
   // Loading & Error States
   const [regLoading, setRegLoading] = useState(true);
   const [memLoading, setMemLoading] = useState(false);
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [mentorsLoading, setMentorsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [viewLoading, setViewLoading] = useState<number | null>(null);
@@ -59,17 +65,22 @@ export default function AdminUnifiedManagementPage() {
   // Evaluate Form States (Registrasi)
   const [selectedStatus, setSelectedStatus] = useState<'ACCEPTED' | 'REJECTED' | 'PENDING'>('PENDING');
   const [selectedDivisiId, setSelectedDivisiId] = useState<number | null>(null);
-  const [teamName, setTeamName] = useState(''); 
+  const [selectedMentorId, setSelectedMentorId] = useState<number | ''>(''); 
 
   // Edit Member States
   const [editMemberTipe, setEditMemberTipe] = useState<'INTERN' | 'MEMBER'>('INTERN');
-  const [editMemberTim, setEditMemberTim] = useState('');
+  const [editMemberMentorId, setEditMemberMentorId] = useState<number | ''>('');
   
+  // Mentor Management States
+  const [mentorName, setMentorName] = useState('');
+  const [mentorLink, setMentorLink] = useState('');
+  const [editMentorId, setEditMentorId] = useState<number | null>(null);
+
   // Modal State
   const [modalConfig, setModalConfig] = useState<{
     isOpen: boolean;
-    type: 'view_reg' | 'evaluate_reg' | 'view_member' | 'edit_member' | null;
-    data: Registration | MemberData | null;
+    type: 'view_reg' | 'evaluate_reg' | 'view_member' | 'edit_member' | 'manage_mentor' | null;
+    data: Registration | MemberData | any | null;
   }>({
     isOpen: false,
     type: null,
@@ -128,6 +139,23 @@ export default function AdminUnifiedManagementPage() {
     fetchRegistrations();
   }, []);
 
+  // Fetch Mentors (always needed for evaluation dropdown)
+  useEffect(() => {
+    async function fetchMentors() {
+      try {
+        setMentorsLoading(true);
+        const res = await fetch('/api/admin/mentor', { credentials: 'include' });
+        const data = await res.json();
+        if (res.ok) setMentors(data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch mentors', err);
+      } finally {
+        setMentorsLoading(false);
+      }
+    }
+    fetchMentors();
+  }, []);
+
   // Fetch Members
   useEffect(() => {
     async function fetchMembers() {
@@ -147,7 +175,8 @@ export default function AdminUnifiedManagementPage() {
           prodi: m.prodi?.nama ?? '-',
           fakultas: m.prodi?.fakultas?.nama ?? '-',
           divisi: m.divisi?.nama ?? '-',
-          tim: m.tim,
+          id_mentor: m.id_mentor,
+          mentor_nama: m.mentor?.nama ?? null,
           tipe_member: m.tipe_member,
           createdAt: new Date(m.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
         }));
@@ -164,6 +193,53 @@ export default function AdminUnifiedManagementPage() {
     }
   }, [activeTab, members.length]);
 
+  // Fetch Settings
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        setSettingsLoading(true);
+        const res = await fetch('/api/admin/settings', { credentials: 'include' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message ?? 'Failed to fetch settings');
+        setSettings(data.data || []);
+      } catch (err: any) {
+        console.error('Failed to fetch settings', err);
+      } finally {
+        setSettingsLoading(false);
+      }
+    }
+    if (activeTab === 'SETTINGS') {
+      fetchSettings();
+    }
+  }, [activeTab]);
+
+  const updateSetting = async (type: string, payload: any) => {
+    try {
+      setSettingsLoading(true);
+      const res = await fetch(`/api/admin/settings/${type}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to update setting');
+      
+      setSettings(prev => {
+        const exists = prev.find(s => s.type === type);
+        if (exists) {
+          return prev.map(s => s.type === type ? data.data : s);
+        }
+        return [...prev, data.data];
+      });
+      alert(`Setting ${type} updated successfully!`);
+    } catch (err: any) {
+      alert(err.message || 'Terjadi kesalahan saat mengupdate setting');
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
   // Filters
   const filteredRegistrations = registrations.filter(reg => 
     reg.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -176,7 +252,7 @@ export default function AdminUnifiedManagementPage() {
     (m.nama.toLowerCase().includes(search.toLowerCase()) || 
      m.nim.toLowerCase().includes(search.toLowerCase()) ||
      m.divisi.toLowerCase().includes(search.toLowerCase()) ||
-     (m.tim && m.tim.toLowerCase().includes(search.toLowerCase())))
+     (m.mentor_nama && m.mentor_nama.toLowerCase().includes(search.toLowerCase())))
   );
 
   const openDetailReg = async (reg: Registration) => {
@@ -233,13 +309,14 @@ export default function AdminUnifiedManagementPage() {
         divisi1_id: div1?.id_divisi ?? null,
         divisi2: div2?.divisi?.nama ?? 'Nama Divisi Tidak Ditemukan',
         divisi2_id: div2?.id_divisi ?? null,
-        tim: r.member?.tim ?? '',
+        id_mentor: r.member?.id_mentor ?? null,
+        mentor_nama: r.member?.mentor?.nama ?? null,
       };
 
       setModalConfig({ isOpen: true, type: 'evaluate_reg', data: detail });
       setSelectedStatus(r.status === 'ACCEPTED' ? 'ACCEPTED' : r.status === 'REJECTED' ? 'REJECTED' : 'ACCEPTED');
       setSelectedDivisiId(r.id_divisi_diterima || detail.divisi1_id || detail.divisi2_id);
-      setTeamName(r.member?.tim ?? '');
+      setSelectedMentorId(r.member?.id_mentor ?? '');
     } catch (err: any) {
       alert(err.message || 'Gagal mengambil detail registrasi');
     } finally {
@@ -253,7 +330,7 @@ export default function AdminUnifiedManagementPage() {
 
   const openMemberEdit = (m: MemberData) => {
     setEditMemberTipe(m.tipe_member);
-    setEditMemberTim(m.tim || '');
+    setEditMemberMentorId(m.id_mentor ?? '');
     setModalConfig({ isOpen: true, type: 'edit_member', data: m });
   };
 
@@ -261,8 +338,11 @@ export default function AdminUnifiedManagementPage() {
     if (actionLoading) return;
     setModalConfig({ isOpen: false, type: null, data: null });
     setSelectedDivisiId(null);
-    setTeamName('');
-    setEditMemberTim('');
+    setSelectedMentorId('');
+    setEditMemberMentorId('');
+    setMentorName('');
+    setMentorLink('');
+    setEditMentorId(null);
   };
 
   const confirmEvaluate = async () => {
@@ -276,7 +356,7 @@ export default function AdminUnifiedManagementPage() {
     const payload = {
       status: selectedStatus,
       id_divisi_diterima: selectedStatus === 'ACCEPTED' ? selectedDivisiId : null,
-      tim: selectedStatus === 'ACCEPTED' ? teamName : null
+      id_mentor: selectedStatus === 'ACCEPTED' ? (selectedMentorId || null) : null
     };
 
     try {
@@ -320,7 +400,7 @@ export default function AdminUnifiedManagementPage() {
         credentials: 'include',
         body: JSON.stringify({
           tipe_member: editMemberTipe,
-          tim: editMemberTim || null
+          id_mentor: editMemberMentorId || null
         })
       });
       
@@ -332,7 +412,8 @@ export default function AdminUnifiedManagementPage() {
         prev.map(m => m.id_member === (modalConfig.data as MemberData).id_member ? { 
           ...m, 
           tipe_member: editMemberTipe,
-          tim: editMemberTim || null
+          id_mentor: editMemberMentorId || null,
+          mentor_nama: mentors.find(mnt => mnt.id_mentor === editMemberMentorId)?.nama || null
         } : m)
       );
 
@@ -369,6 +450,132 @@ export default function AdminUnifiedManagementPage() {
       setIsExporting(false);
     }
   };
+
+  const saveMentor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mentorName) return;
+
+    try {
+      setActionLoading(true);
+      const payload = { nama: mentorName, link_profile: mentorLink };
+
+      let res;
+      if (editMentorId) {
+        res = await fetch(`/api/admin/mentor/${editMentorId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        res = await fetch('/api/admin/mentor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Gagal menyimpan mentor');
+
+      if (editMentorId) {
+        setMentors(prev => prev.map(m => m.id_mentor === editMentorId ? data.data : m));
+      } else {
+        setMentors(prev => [...prev, data.data]);
+      }
+      closeModal();
+    } catch (err: any) {
+      alert(err.message || 'Gagal menyimpan mentor');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const deleteMentor = async (id: number) => {
+    if (!confirm('Yakin ingin menghapus mentor ini?')) return;
+    try {
+      setMentorsLoading(true);
+      const res = await fetch(`/api/admin/mentor/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Gagal menghapus mentor');
+      setMentors(prev => prev.filter(m => m.id_mentor !== id));
+    } catch (err: any) {
+      alert(err.message || 'Gagal menghapus mentor');
+    } finally {
+      setMentorsLoading(false);
+    }
+  };
+
+  const openAddMentorModal = () => {
+    setEditMentorId(null);
+    setMentorName('');
+    setMentorLink('');
+    setModalConfig({ isOpen: true, type: 'manage_mentor', data: null });
+  };
+
+  const openEditMentorModal = (mnt: any) => {
+    setEditMentorId(mnt.id_mentor);
+    setMentorName(mnt.nama);
+    setMentorLink(mnt.link_profile || '');
+    setModalConfig({ isOpen: true, type: 'manage_mentor', data: mnt });
+  };
+
+  const renderMentorsTab = () => (
+    <div className="overflow-x-auto p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-bold text-gray-800">Daftar Mentor</h3>
+        <button onClick={openAddMentorModal} className="bg-orange-500 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-orange-600 transition-colors">
+          + Tambah Mentor
+        </button>
+      </div>
+      {mentorsLoading ? (
+        <div className="flex justify-center items-center p-10 text-gray-400 text-sm gap-2">
+          <FiLoader className="animate-spin text-xl" /> Memuat data mentor...
+        </div>
+      ) : (
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
+              <th className="p-4 font-semibold uppercase tracking-wider text-xs w-16">ID</th>
+              <th className="p-4 font-semibold uppercase tracking-wider text-xs">Nama Mentor</th>
+              <th className="p-4 font-semibold uppercase tracking-wider text-xs">Profile Link</th>
+              <th className="p-4 font-semibold uppercase tracking-wider text-xs text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mentors.length > 0 ? (
+              mentors.map((mnt) => (
+                <tr key={mnt.id_mentor} className="border-b border-gray-50 hover:bg-orange-50/30 transition-colors">
+                  <td className="p-4 text-gray-600 font-medium">{mnt.id_mentor}</td>
+                  <td className="p-4 text-gray-800 font-bold">{mnt.nama}</td>
+                  <td className="p-4 text-gray-600 text-sm">
+                    {mnt.link_profile ? (
+                      <a href={mnt.link_profile} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                        {mnt.link_profile}
+                      </a>
+                    ) : '-'}
+                  </td>
+                  <td className="p-4 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => openEditMentorModal(mnt)} className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors border border-transparent hover:border-orange-200">
+                        <FiEdit />
+                      </button>
+                      <button onClick={() => deleteMentor(mnt.id_mentor)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors border border-transparent hover:border-red-200">
+                        <FiX />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} className="p-8 text-center text-gray-500 font-medium">Belum ada mentor.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
 
   const renderRegistrationsTable = () => (
     <div className="overflow-x-auto">
@@ -450,7 +657,7 @@ export default function AdminUnifiedManagementPage() {
               <th className="p-4 font-semibold uppercase tracking-wider text-xs">NIM</th>
               <th className="p-4 font-semibold uppercase tracking-wider text-xs">Nama</th>
               <th className="p-4 font-semibold uppercase tracking-wider text-xs">Divisi</th>
-              <th className="p-4 font-semibold uppercase tracking-wider text-xs">Tim</th>
+              <th className="p-4 font-semibold uppercase tracking-wider text-xs">Mentor</th>
               <th className="p-4 font-semibold uppercase tracking-wider text-xs text-right">Actions</th>
             </tr>
           </thead>
@@ -465,8 +672,8 @@ export default function AdminUnifiedManagementPage() {
                   </td>
                   <td className="p-4 text-gray-800 font-medium">{m.divisi}</td>
                   <td className="p-4 text-gray-600">
-                    {m.tim ? (
-                      <span className="px-2.5 py-1 bg-gray-100 rounded-md text-sm border border-gray-200 font-medium">{m.tim}</span>
+                    {m.mentor_nama ? (
+                      <span className="px-2.5 py-1 bg-gray-100 rounded-md text-sm border border-gray-200 font-medium">{m.mentor_nama}</span>
                     ) : (
                       <span className="text-gray-400 italic text-sm">-</span>
                     )}
@@ -503,6 +710,69 @@ export default function AdminUnifiedManagementPage() {
       )}
     </div>
   );
+
+  const renderSettingsTab = () => {
+    const getSetting = (type: string) => settings.find(s => s.type === type) || { type, isActive: false, startDate: null, endDate: null };
+    const regSetting = getSetting('REGISTRATION');
+    const annSetting = getSetting('ANNOUNCEMENT');
+
+    const SettingCard = ({ title, setting, type }: { title: string, setting: any, type: string }) => {
+      const [isActive, setIsActive] = useState(setting.isActive);
+      const [startDate, setStartDate] = useState(setting.startDate ? new Date(setting.startDate).toISOString().slice(0, 16) : '');
+      const [endDate, setEndDate] = useState(setting.endDate ? new Date(setting.endDate).toISOString().slice(0, 16) : '');
+
+      useEffect(() => {
+        setIsActive(setting.isActive);
+        setStartDate(setting.startDate ? new Date(setting.startDate).toISOString().slice(0, 16) : '');
+        setEndDate(setting.endDate ? new Date(setting.endDate).toISOString().slice(0, 16) : '');
+      }, [setting]);
+
+      return (
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm text-black">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">{title}</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-700">Enable Form</span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} className="sr-only peer" />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+              </label>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Start Date & Time (Opsional)</label>
+              <input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">End Date & Time (Opsional)</label>
+              <input type="datetime-local" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm" />
+            </div>
+            <div className="pt-4 border-t border-gray-100">
+              <button 
+                onClick={() => updateSetting(type, { isActive, startDate: startDate || null, endDate: endDate || null })}
+                disabled={settingsLoading}
+                className="w-full py-2 bg-gray-900 text-white rounded-xl font-semibold hover:bg-black transition-colors disabled:opacity-50"
+              >
+                Save {title} Setting
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    return (
+      <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 min-h-[400px]">
+        {settingsLoading && settings.length === 0 ? (
+          <div className="col-span-full flex justify-center items-center text-gray-500"><FiLoader className="animate-spin text-2xl" /></div>
+        ) : (
+          <>
+            <SettingCard title="Registration Form" setting={regSetting} type="REGISTRATION" />
+            <SettingCard title="Announcement Page" setting={annSetting} type="ANNOUNCEMENT" />
+          </>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6 relative">
@@ -564,6 +834,22 @@ export default function AdminUnifiedManagementPage() {
             >
               <FiAward /> Members
             </button>
+            <button
+              onClick={() => { setActiveTab('MENTORS'); setSearch(''); }}
+              className={`flex-1 lg:flex-none flex items-center justify-center gap-2 py-2 px-5 font-semibold text-sm rounded-lg transition-all ${
+                activeTab === 'MENTORS' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
+              }`}
+            >
+              <FiUsers /> Mentors
+            </button>
+            <button
+              onClick={() => { setActiveTab('SETTINGS'); setSearch(''); }}
+              className={`flex-1 lg:flex-none flex items-center justify-center gap-2 py-2 px-5 font-semibold text-sm rounded-lg transition-all ${
+                activeTab === 'SETTINGS' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
+              }`}
+            >
+              <FiSettings /> Settings
+            </button>
           </div>
 
           <div className="relative w-full lg:w-96">
@@ -581,7 +867,7 @@ export default function AdminUnifiedManagementPage() {
         </div>
 
         {/* DYNAMIC TABLE CONTENT */}
-        {activeTab === 'REGISTER' ? renderRegistrationsTable() : renderMembersTable()}
+        {activeTab === 'REGISTER' ? renderRegistrationsTable() : activeTab === 'SETTINGS' ? renderSettingsTab() : activeTab === 'MENTORS' ? renderMentorsTab() : renderMembersTable()}
 
       </div>
 
@@ -596,6 +882,7 @@ export default function AdminUnifiedManagementPage() {
                 {modalConfig.type === 'evaluate_reg' && 'Evaluate Application'}
                 {modalConfig.type === 'view_member' && 'Member Details'}
                 {modalConfig.type === 'edit_member' && 'Edit Member'}
+                {modalConfig.type === 'manage_mentor' && (editMentorId ? 'Edit Mentor' : 'Tambah Mentor')}
               </h3>
               <button onClick={closeModal} disabled={actionLoading} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50">
                 <FiX className="text-xl" />
@@ -669,9 +956,18 @@ export default function AdminUnifiedManagementPage() {
                       </div>
 
                       <div>
-                        <label className="text-sm font-bold text-gray-700 block mb-2">3. Nama Tim (Opsional)</label>
-                        <input type="text" value={teamName} onChange={(e) => setTeamName(e.target.value)} placeholder="Contoh: Frontend A, Creative, dll..." className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-gray-700"/>
-                        <p className="text-xs text-gray-400 mt-1">Bisa diisi menyusul jika pembagian tim belum final.</p>
+                        <label className="text-sm font-bold text-gray-700 block mb-2">3. Mentor (Opsional)</label>
+                        <select 
+                          value={selectedMentorId} 
+                          onChange={(e) => setSelectedMentorId(e.target.value === '' ? '' : parseInt(e.target.value))} 
+                          className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-gray-700 bg-white"
+                        >
+                          <option value="">-- Belum ada mentor --</option>
+                          {mentors.map(mnt => (
+                            <option key={mnt.id_mentor} value={mnt.id_mentor}>{mnt.nama}</option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-gray-400 mt-1">Pilih mentor yang bertanggung jawab.</p>
                       </div>
                     </div>
                   )}
@@ -703,7 +999,7 @@ export default function AdminUnifiedManagementPage() {
 
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider pt-2">Penempatan</p>
                   <DetailRow label="Divisi" value={modalConfig.data.divisi} />
-                  <DetailRow label="Tim Internal" value={modalConfig.data.tim || '-'} />
+                  <DetailRow label="Mentor" value={modalConfig.data.mentor_nama || '-'} />
                 </div>
               )}
 
@@ -729,17 +1025,48 @@ export default function AdminUnifiedManagementPage() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-bold text-gray-700 block mb-2">Nama Tim / Squad</label>
-                    <input 
-                      type="text" 
-                      value={editMemberTim} 
-                      onChange={(e) => setEditMemberTim(e.target.value)} 
-                      placeholder="Contoh: Tim Creative A..." 
-                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-gray-700"
-                    />
-                    <p className="text-xs text-gray-400 mt-1">Kosongkan jika tidak ada tim spesifik di dalam divisinya.</p>
+                    <label className="text-sm font-bold text-gray-700 block mb-2">Mentor Penugasan</label>
+                    <select 
+                      value={editMemberMentorId} 
+                      onChange={(e) => setEditMemberMentorId(e.target.value === '' ? '' : parseInt(e.target.value))} 
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-gray-700 bg-white"
+                    >
+                      <option value="">-- Tidak ada mentor --</option>
+                      {mentors.map(mnt => (
+                        <option key={mnt.id_mentor} value={mnt.id_mentor}>{mnt.nama}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-400 mt-1">Kosongkan jika tidak ada mentor spesifik.</p>
                   </div>
                 </div>
+              )}
+
+              {/* 5. MANAGE MENTOR */}
+              {modalConfig.type === 'manage_mentor' && (
+                <form onSubmit={saveMentor} className="text-gray-600 leading-relaxed space-y-5" id="mentorForm">
+                  <div>
+                    <label className="text-sm font-bold text-gray-700 block mb-2">Nama Mentor <span className="text-red-500">*</span></label>
+                    <input 
+                      type="text" 
+                      value={mentorName} 
+                      onChange={(e) => setMentorName(e.target.value)} 
+                      placeholder="Masukkan nama mentor" 
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-gray-700"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-bold text-gray-700 block mb-2">Link Profile (Opsional)</label>
+                    <input 
+                      type="url" 
+                      value={mentorLink} 
+                      onChange={(e) => setMentorLink(e.target.value)} 
+                      placeholder="Contoh: https://linkedin.com/in/..." 
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-gray-700"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Bisa berupa link LinkedIn, Instagram, dll.</p>
+                  </div>
+                </form>
               )}
             </div>
 
@@ -760,6 +1087,13 @@ export default function AdminUnifiedManagementPage() {
                 <button onClick={confirmEditMember} disabled={actionLoading} className="px-5 py-2 rounded-xl bg-orange-500 text-white font-semibold hover:bg-orange-600 transition-colors shadow-sm disabled:opacity-70 flex items-center gap-2">
                   {actionLoading && <FiLoader className="animate-spin" />}
                   Update Member
+                </button>
+              )}
+
+              {modalConfig.type === 'manage_mentor' && (
+                <button type="submit" form="mentorForm" disabled={actionLoading || !mentorName} className="px-5 py-2 rounded-xl bg-orange-500 text-white font-semibold hover:bg-orange-600 transition-colors shadow-sm disabled:opacity-70 flex items-center gap-2">
+                  {actionLoading && <FiLoader className="animate-spin" />}
+                  Save Mentor
                 </button>
               )}
             </div>

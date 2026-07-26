@@ -47,13 +47,36 @@ const initialForm: FormState = {
   linkPortofolio: '',
 };
 
-import { INTERN_REGISTRATION_OPEN } from '@/lib/constants';
+
 
 export default function InternRegisterPage() {
   const [form, setForm] = useState<FormState>(initialForm);
   const [submitted, setSubmitted] = useState(false);
+  const [isOpen, setIsOpen] = useState<boolean | null>(null);
 
-  if (!INTERN_REGISTRATION_OPEN) {
+  useEffect(() => {
+    async function checkStatus() {
+      try {
+        const res = await fetch('/api/settings/REGISTRATION');
+        const data = await res.json();
+        setIsOpen(data.isOpen);
+      } catch (error) {
+        console.error("Failed to check registration status", error);
+        setIsOpen(false);
+      }
+    }
+    checkStatus();
+  }, []);
+
+  if (isOpen === null) {
+    return (
+      <div className='min-h-[calc(100vh-400px)] bg-[#FFF8F3] py-24 flex items-center justify-center'>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isOpen) {
     return (
       <div className='min-h-[calc(100vh-400px)] bg-white py-24 flex items-center justify-center'>
         <Wrapper className='flex flex-col items-center text-center'>
