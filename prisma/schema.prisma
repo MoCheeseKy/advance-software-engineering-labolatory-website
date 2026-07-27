@@ -88,13 +88,15 @@ model Member {
   id_divisi     Int
   
   id_mentor     Int?    
-  
+  id_team       Int?
+
   tipe_member   TipeMember  @default(INTERN) 
   
   registrasi    Registrasi? @relation(fields: [id_registrasi], references: [id_registrasi], onDelete: SetNull)
   prodi         Prodi       @relation(fields: [id_prodi], references: [id_prodi])
   divisi        Divisi      @relation(fields: [id_divisi], references: [id_divisi])
   mentor        Mentor?     @relation(fields: [id_mentor], references: [id_mentor], onDelete: SetNull)
+  team          InternTeam? @relation(fields: [id_team], references: [id_team], onDelete: SetNull)
 
   @@map("member")
 }
@@ -172,4 +174,13 @@ model Mentor {
   members      Member[]
 
   @@map("mentor")
+}
+
+model InternTeam {
+  id_team Int      @id @default(autoincrement())
+  nama    String
+  kategori String  @default("Software Engineering")
+  members Member[]
+
+  @@map("intern_team")
 }

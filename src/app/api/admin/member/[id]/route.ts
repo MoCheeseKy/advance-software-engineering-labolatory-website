@@ -76,7 +76,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         const body = await request.json();
         
         // Ekstrak data yang boleh di-edit dari body request
-        const { id_divisi, id_mentor, tipe_member, status_aktif } = body;
+        const { id_divisi, id_mentor, tipe_member, status_aktif, id_team } = body;
 
         // Validasi input enum/opsi
         const validTipeMember = ['INTERN', 'MEMBER'];
@@ -94,6 +94,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
             data: {
                 id_divisi: id_divisi !== undefined ? id_divisi : undefined,
                 id_mentor: id_mentor !== undefined ? id_mentor : undefined,
+                id_team: id_team !== undefined ? id_team : undefined,
                 tipe_member: tipe_member !== undefined ? tipe_member : undefined
             },
             include: {

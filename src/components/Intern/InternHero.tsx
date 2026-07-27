@@ -27,6 +27,7 @@ export default function InternHero() {
             langsung mengerjakan proyek real-world seru di bidang Software
             Engineering dan Game Development.
           </p>
+          <div className='flex flex-wrap gap-4'>
             {INTERN_REGISTRATION_OPEN ? (
               <Link href='/intern/register'>
                 <Button
@@ -45,6 +46,16 @@ export default function InternHero() {
                 Pendaftaran Telah Ditutup
               </Button>
             )}
+            
+            <Link href='/intern/announcement'>
+              <Button
+                colorType='primary'
+                className='!w-auto !rounded-lg !px-8 !py-4 !text-base md:!text-lg font-bold shadow-md hover:scale-[1.02] transition-transform !bg-white !text-primary hover:!bg-gray-100 !border-none'
+              >
+                Cek Pengumuman Hasil
+              </Button>
+            </Link>
+          </div>
         </div>
       </Wrapper>
     </section>

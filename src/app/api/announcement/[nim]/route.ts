@@ -27,6 +27,29 @@ export async function GET(
                 nama: true,
                 link_profile: true
               }
+            },
+            team: {
+              select: {
+                id_team: true,
+                nama: true,
+                kategori: true,
+                members: {
+                  select: {
+                    nim: true,
+                    nama: true,
+                    mentor: {
+                      select: {
+                        nama: true
+                      }
+                    },
+                    divisi: {
+                      select: {
+                        nama: true
+                      }
+                    }
+                  }
+                }
+              }
             }
           },
         },
@@ -54,6 +77,7 @@ export async function GET(
           status: registrant.status,
           divisi_diterima: registrant.divisiDiterima?.nama || null,
           mentor: registrant.member?.mentor || null,
+          team: registrant.member?.team || null,
         },
       },
       { status: 200 },

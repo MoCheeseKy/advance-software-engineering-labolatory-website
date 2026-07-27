@@ -10,6 +10,8 @@ import {
   FiCheckCircle,
   FiXCircle,
   FiExternalLink,
+  FiUsers,
+  FiX,
 } from 'react-icons/fi';
 import Wrapper from '@/components/_shared/Wrapper';
 
@@ -22,6 +24,20 @@ type AnnouncementResult = {
     nama: string;
     link_profile: string | null;
   } | null;
+  team: {
+    nama: string;
+    kategori: string;
+    members: {
+      nim: string;
+      nama: string;
+      mentor: {
+        nama: string;
+      } | null;
+      divisi: {
+        nama: string;
+      } | null;
+    }[];
+  } | null;
 } | null;
 
 export default function AnnouncementPage() {
@@ -30,6 +46,7 @@ export default function AnnouncementPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnnouncementResult>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showTeamModal, setShowTeamModal] = useState(false);
 
   useEffect(() => {
     async function checkStatus() {
@@ -81,7 +98,10 @@ export default function AnnouncementPage() {
     return (
       <div className='min-h-[calc(100vh-200px)] bg-[#FFF8F3] py-24 flex items-center justify-center relative overflow-hidden'>
         <div className='absolute -top-32 -left-32 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none' />
-        <Wrapper className='flex flex-col items-center text-center relative z-10' backgroundColor="bg-transparent">
+        <Wrapper
+          className='flex flex-col items-center text-center relative z-10'
+          backgroundColor='bg-transparent'
+        >
           <h1 className='text-3xl md:text-5xl font-black text-neutral-900 mb-4'>
             Pengumuman <span className='text-primary'>Belum Dibuka</span>
           </h1>
@@ -129,7 +149,10 @@ export default function AnnouncementPage() {
       <div className='absolute -top-32 -left-32 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[120px] pointer-events-none' />
       <div className='absolute -bottom-32 -right-32 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] pointer-events-none' />
 
-      <Wrapper className='flex flex-col items-center pt-16 md:pt-24 pb-32' backgroundColor="bg-transparent">
+      <Wrapper
+        className='flex flex-col items-center pt-16 md:pt-24 pb-32'
+        backgroundColor='bg-transparent'
+      >
         <div className='relative z-10 flex flex-col items-center text-center gap-5 mb-12'>
           <div className='space-y-4 max-w-[760px]'>
             <h1 className='text-4xl md:text-6xl font-black leading-[1.05] text-neutral-900'>
@@ -236,6 +259,25 @@ export default function AnnouncementPage() {
                             )}
                           </div>
                         )}
+                        {result.team && (
+                          <div className='mt-2'>
+                            <p className='text-sm text-green-800 font-bold mb-1'>
+                              Team:
+                            </p>
+                            <div className='flex items-center gap-2'>
+                              <p className='text-lg text-green-900 font-bold'>
+                                {result.team.nama}
+                              </p>
+                              <button
+                                onClick={() => setShowTeamModal(true)}
+                                className='p-1.5 bg-green-200 text-green-800 hover:bg-green-300 rounded-lg transition-colors group'
+                                title='Lihat Anggota Tim'
+                              >
+                                <FiUsers className='text-lg group-hover:scale-110 transition-transform' />
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <a
@@ -290,6 +332,75 @@ export default function AnnouncementPage() {
           </div>
         </div>
       </Wrapper>
+
+      {/* Team Modal */}
+      {showTeamModal && result?.team && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200'>
+          <div className='bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200'>
+            <div className='flex justify-between items-center p-5 border-b border-gray-100'>
+              <h3 className='text-lg font-bold text-gray-800'>Detail Team</h3>
+              <button
+                onClick={() => setShowTeamModal(false)}
+                className='text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors'
+              >
+                <FiX className='text-xl' />
+              </button>
+            </div>
+            <div className='p-6 max-h-[65vh] overflow-y-auto pr-2'>
+              <div className='flex items-center justify-between pb-3 border-b border-gray-100 mb-4'>
+                <span className='text-sm text-gray-500 font-medium'>
+                  Kategori
+                </span>
+                <span className='px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200'>
+                  {result.team.kategori}
+                </span>
+              </div>
+              <div className='flex justify-between items-start gap-4 mb-4'>
+                <span className='text-sm text-gray-500 font-medium shrink-0'>
+                  Nama Team
+                </span>
+                <span className='text-sm font-semibold text-gray-800 text-right'>
+                  {result.team.nama}
+                </span>
+              </div>
+
+              <div className='mt-4 pt-4 border-t border-gray-100'>
+                <h4 className='text-xs font-bold text-gray-400 uppercase tracking-wider mb-3'>
+                  Anggota Team
+                </h4>
+                <div className='space-y-2'>
+                  {result.team.members.map((m, idx) => (
+                    <div
+                      key={idx}
+                      className='p-3 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-center'
+                    >
+                      <div>
+                        <p className='font-bold text-gray-800 text-sm'>
+                          {m.nama}
+                        </p>
+                        <p className='text-xs text-gray-500'>{m.nim || '-'}</p>
+                      </div>
+                      {m.divisi && (
+                        <span className='text-[10px] font-semibold px-2 py-1 bg-white border border-gray-200 rounded text-gray-600'>
+                          {m.divisi.nama}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className='p-5 border-t border-gray-100 bg-gray-50 flex justify-end'>
+              <button
+                onClick={() => setShowTeamModal(false)}
+                className='px-5 py-2 rounded-xl text-gray-600 font-semibold hover:bg-gray-200 transition-colors'
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
