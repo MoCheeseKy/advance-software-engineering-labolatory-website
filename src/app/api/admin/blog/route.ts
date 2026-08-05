@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
 
-
 // GET function to fetch all blog posts
 export async function GET(request: Request) {
     try {
@@ -73,12 +72,27 @@ export async function POST(request: Request) {
             return NextResponse.json({message: "Invalid or expired token"}, {status: 401});
         }
 
-        // Extract admin from session
         const id_admin = sessionData.id;
+        const formData = await request.formData();
+        
+        const title = formData.get('title') as string;
+        const url = formData.get('url') as string;
+        
+        const authorsString = formData.get('authors') as string;
+        const textsString = formData.get('texts') as string;
+        
+        const authors = authorsString ? JSON.parse(authorsString) : [];
+        const texts = textsString ? JSON.parse(textsString) : [];
 
-        // Data extraction and validation
-        const body = await request.json();
-        const { title, authors, url, texts, images } = body;
+        const imageFile = formData.get('images') as File | null;
+        let imagesArray: string[] = [];
+
+        if (imageFile) {
+            const arrayBuffer = await imageFile.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const base64Image = `data:${imageFile.type};base64,${buffer.toString('base64')}`;
+            imagesArray.push(base64Image);
+        }
 
         if (!title || !url) {
             return NextResponse.json({message: "Missing required fields"}, {status: 400});
@@ -88,10 +102,10 @@ export async function POST(request: Request) {
             data: {
                 id_admin: Number(id_admin),
                 title,
-                authors: authors || [],
+                authors,
                 url,
-                texts: texts || [],
-                images: images || [],
+                texts,
+                images: imagesArray, 
             }
         });
 

@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { FiArrowLeft, FiImage, FiSave, FiLoader } from 'react-icons/fi';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { UploadBlog } from '@/lib/file-upload'; 
 
 export default function CreateBlogPage() {
   const router = useRouter();
@@ -51,42 +52,30 @@ export default function CreateBlogPage() {
 
   const handleFormat = (tool: string) => {
     switch (tool) {
-      case 'B':
-        execCommand('bold');
-        break;
-      case 'I':
-        execCommand('italic');
-        break;
-      case 'U':
-        execCommand('underline');
-        break;
-      case 'H1':
-        execCommand('formatBlock', 'H1');
-        break;
-      case 'H2':
-        execCommand('formatBlock', 'H2');
-        break;
-      case 'Quote':
-        execCommand('formatBlock', 'BLOCKQUOTE');
-        break;
+      case 'B': execCommand('bold'); break;
+      case 'I': execCommand('italic'); break;
+      case 'U': execCommand('underline'); break;
+      case 'H1': execCommand('formatBlock', 'H1'); break;
+      case 'H2': execCommand('formatBlock', 'H2'); break;
+      case 'Quote': execCommand('formatBlock', 'BLOCKQUOTE'); break;
       case 'Link':
         const url = window.prompt('Masukkan URL Link (contoh: https://google.com):');
         if (url) execCommand('createLink', url);
         break;
-      case 'Image':
-        editorImageInputRef.current?.click();
-        break;
-      default:
-        break;
+      case 'Image': editorImageInputRef.current?.click(); break;
+      default: break;
     }
   };
 
   const handleEditorImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (file) {
+
       try {
         const base64Url = await toBase64(file);
         execCommand('insertImage', base64Url);
+
       } catch (err) {
         console.error("Gagal membaca gambar:", err);
         alert("Gagal memproses gambar.");
@@ -109,41 +98,25 @@ export default function CreateBlogPage() {
       return;
     }
 
+    if (!imageFile) {
+      setError("Cover image wajib diunggah.");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const urlSlug = title
         .toLowerCase()
         .trim()
         .replace(/[^a-z0-9]+/g, '-') || 'new-blog-post';
 
-      let imagesArray: string[] = [];
-
-      if (imageFile) {
-        const base64Image = await toBase64(imageFile);
-        imagesArray.push(base64Image);
-      }
-
-      const payload = {
-        title: title,
-        url: urlSlug,
-        authors: ["Admin"], 
-        texts: [content], 
-        images: imagesArray, 
-      };
-
-      const res = await fetch('/api/admin/blog', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(payload),
+      await UploadBlog({
+        file: imageFile,         
+        title: title,            
+        url: urlSlug,            
+        authors: ["Admin"],      
+        texts: [content]         
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to create blog post');
-      }
 
       router.push('/admin/blog');
       router.refresh(); 
@@ -176,6 +149,7 @@ export default function CreateBlogPage() {
       )}
 
       <form onSubmit={handleSave} className="space-y-6">
+        {/* Konten Form tetap persis sama seperti sebelumnya */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
 
           {/* Title */}

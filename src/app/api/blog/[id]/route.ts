@@ -17,6 +17,7 @@ export async function GET( request: Request, { params }: { params: Promise<{ id:
         }
 
         return NextResponse.json({ message: "Berhasil mengambil detail artikel", data: blogDetail }, { status: 200 });
+        
     } catch (error) {
         console.error("GET Detail Blog error:", error);
         return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });

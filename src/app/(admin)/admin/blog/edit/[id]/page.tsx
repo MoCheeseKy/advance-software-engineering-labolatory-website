@@ -5,6 +5,9 @@ import { FiLoader, FiCheck, FiArrowLeft, FiImage } from 'react-icons/fi';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 
+// IMPORT FUNGSI UPDATE YANG BARU DIBUAT
+import { UpdateBlog } from '@/lib/file-upload'; 
+
 export default function EditBlogPage() {
   const router = useRouter();
   const params = useParams();
@@ -25,7 +28,6 @@ export default function EditBlogPage() {
   const editorImageInputRef = useRef<HTMLInputElement>(null);
   const initialContentHtml = useRef<string>('');
 
-  // Fetch Data
   useEffect(() => {
     async function fetchSpecificBlog() {
       try {
@@ -147,36 +149,26 @@ export default function EditBlogPage() {
     setActionError(null);
 
     try {
-      let imagesArray: string[] = [];
-      if (editImageFile) {
-        const base64Image = await toBase64(editImageFile);
-        imagesArray.push(base64Image);
-      } else if (editImagePreview && editImagePreview.startsWith('data:image')) {
-         imagesArray.push(editImagePreview); 
-      } else if (editImagePreview) {
-         imagesArray.push(editImagePreview);
-      }
+      const formattedAuthors = editAuthors.split(',').map(a => a.trim()).filter(a => a);
+      const formattedUrl = editUrl || editTitle.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
 
-      const body = {
+      // Tentukan apakah kita menyimpan gambar yang lama atau menggantinya
+      const isKeepingOldImage = !editImageFile;
+
+      // Panggil fungsi UpdateBlog 
+      await UpdateBlog({
+        blogId: blogId,
+        file: editImageFile, 
         title: editTitle,
-        url: editUrl || editTitle.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-'),
-        authors: editAuthors.split(',').map(a => a.trim()).filter(a => a),
-        texts: [finalContent], 
-        images: imagesArray,
-      };
-
-      const res = await fetch(`/api/admin/blog/${blogId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body),
+        url: formattedUrl,
+        authors: formattedAuthors,
+        texts: [finalContent],
+        keepOldImage: isKeepingOldImage
       });
-      
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message ?? 'Update failed');
       
       router.push('/admin/blog');
       router.refresh();
+
     } catch (err: any) {
       setActionError(err.message ?? 'Update failed.');
       setActionLoading(false);
@@ -240,7 +232,7 @@ export default function EditBlogPage() {
             />
           </div>
 
-          {/* URL*/}
+          {/* URL & Authors */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">URL Slug</label>
@@ -253,7 +245,6 @@ export default function EditBlogPage() {
               />
             </div>
 
-            {/* Authors */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Authors (Comma separated)</label>
               <input

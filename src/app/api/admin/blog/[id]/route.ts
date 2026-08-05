@@ -17,27 +17,44 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         // Verify the token
         try {
             await verifyToken(session);
-
+            
         } catch (error) {
             return NextResponse.json({message: "Invalid or expired token"}, {status: 401});
         }
 
-        // Data extraction and update
         const { id } = await params;
         const id_blog = Number(id);
-        const body = await request.json();
+        const formData = await request.formData();
+        
+        const title = formData.get('title') as string;
+        const url = formData.get('url') as string;
+        const authorsString = formData.get('authors') as string;
+        const textsString = formData.get('texts') as string;
+        const keepOldImage = formData.get('keepOldImage') === 'true'; 
+        
+        const authors = authorsString ? JSON.parse(authorsString) : undefined;
+        const texts = textsString ? JSON.parse(textsString) : undefined;
 
-        const { title, authors, url, texts, images } = body;
+        const updateData: any = {};
+        if (title) updateData.title = title;
+        if (url) updateData.url = url;
+        if (authors) updateData.authors = authors;
+        if (texts) updateData.texts = texts;
+
+        if (!keepOldImage) {
+            const imageFile = formData.get('images') as File | null;
+
+            if (imageFile) {
+                const arrayBuffer = await imageFile.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+                const base64Image = `data:${imageFile.type};base64,${buffer.toString('base64')}`;
+                updateData.images = [base64Image]; 
+            }
+        }
 
         const updatedBlog = await prisma.blog.update({
             where: { id_blog },
-            data: {
-                ...(title && { title }),
-                ...(authors && { authors }),
-                ...(url && { url }),
-                ...(texts && { texts }),
-                ...(images && { images }),
-            }
+            data: updateData
         });
 
         return NextResponse.json({message: "Blog updated successfully", data: updatedBlog}, {status: 200});
@@ -81,4 +98,4 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
         console.error("Error deleting blog:", error);
         return NextResponse.json({message: "Error deleting blog"}, {status: 500});
     }
-} 
+}
