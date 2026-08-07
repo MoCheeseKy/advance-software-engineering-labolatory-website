@@ -3,12 +3,16 @@ import React, { useState, useRef } from 'react';
 import { FiArrowLeft, FiImage, FiSave, FiLoader } from 'react-icons/fi';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { UploadBlog } from '@/lib/file-upload'; 
+import { UploadBlog } from '@/lib/frontend-file-upload'; 
 
 export default function CreateBlogPage() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
+  
+  // State baru untuk Authors dan URL Slug
+  const [authors, setAuthors] = useState('');
+  const [url, setUrl] = useState('');
   const [content, setContent] = useState('');
   
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -19,15 +23,6 @@ export default function CreateBlogPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const toBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-  };
 
   const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -59,8 +54,8 @@ export default function CreateBlogPage() {
       case 'H2': execCommand('formatBlock', 'H2'); break;
       case 'Quote': execCommand('formatBlock', 'BLOCKQUOTE'); break;
       case 'Link':
-        const url = window.prompt('Masukkan URL Link (contoh: https://google.com):');
-        if (url) execCommand('createLink', url);
+        const promptUrl = window.prompt('Masukkan URL Link (contoh: https://google.com):');
+        if (promptUrl) execCommand('createLink', promptUrl);
         break;
       case 'Image': editorImageInputRef.current?.click(); break;
       default: break;
@@ -71,10 +66,22 @@ export default function CreateBlogPage() {
     const file = e.target.files?.[0];
 
     if (file) {
-
       try {
-        const base64Url = await toBase64(file);
-        execCommand('insertImage', base64Url);
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const res = await fetch('/api/admin/upload/image', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.message || 'Gagal upload ke server');
+        }
+
+        execCommand('insertImage', data.imageUrl);
 
       } catch (err) {
         console.error("Gagal membaca gambar:", err);
@@ -105,16 +112,17 @@ export default function CreateBlogPage() {
     }
 
     try {
-      const urlSlug = title
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, '-') || 'new-blog-post';
+      // Format authors: pisahkan dengan koma, hilangkan spasi kosong
+      const formattedAuthors = authors.split(',').map(a => a.trim()).filter(a => a);
+      
+      // Jika url kosong, otomatis buat slug dari title
+      const formattedUrl = url || title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
 
       await UploadBlog({
         file: imageFile,         
         title: title,            
-        url: urlSlug,            
-        authors: ["Admin"],      
+        url: formattedUrl,       
+        authors: formattedAuthors.length > 0 ? formattedAuthors : ["Admin"], // Fallback ke "Admin" jika kosong
         texts: [content]         
       });
 
@@ -149,10 +157,9 @@ export default function CreateBlogPage() {
       )}
 
       <form onSubmit={handleSave} className="space-y-6">
-        {/* Konten Form tetap persis sama seperti sebelumnya */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
 
-          {/* Title */}
+          {/* Title */} 
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Post Title</label>
             <input
@@ -163,6 +170,31 @@ export default function CreateBlogPage() {
               placeholder="e.g. Introduction to Software Engineering..."
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium text-black"
             />
+          </div>
+
+          {/* URL & Authors Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">URL Slug (Opsional)</label>
+              <input
+                type="text"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="e.g. my-new-blog-post"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium text-black"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Authors (Pisahkan dengan koma)</label>
+              <input
+                type="text"
+                value={authors}
+                onChange={(e) => setAuthors(e.target.value)}
+                placeholder="e.g. John Doe, Jane Smith"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium text-black"
+              />
+            </div>
           </div>
 
           {/* Category */}

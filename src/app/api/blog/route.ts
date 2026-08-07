@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// GET function to fetch blog posts with pagination
+// GET function to fetch blog posts with pagination untuk halaman publik
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);

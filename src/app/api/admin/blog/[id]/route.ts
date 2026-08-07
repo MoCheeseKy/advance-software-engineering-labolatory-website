@@ -2,6 +2,22 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
+import { saveFileToLocal } from '@/lib/backend-file-upload'; 
+import { unlink } from 'fs/promises'; 
+import path from 'path';
+
+async function deleteLocalFile(fileUrl: string) {
+    try {
+        if (!fileUrl || !fileUrl.startsWith('/uploads/')) return;
+        
+        const filePath = path.join(process.cwd(), 'public', fileUrl);
+        await unlink(filePath);
+        console.log(`Berhasil menghapus file fisik: ${filePath}`);
+
+    } catch (error) {
+        console.error(`Gagal menghapus file ${fileUrl} (Mungkin file sudah tidak ada):`, error);
+    }
+}
 
 // PUT function to update a blog post based on id
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -17,13 +33,22 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         // Verify the token
         try {
             await verifyToken(session);
-            
         } catch (error) {
             return NextResponse.json({message: "Invalid or expired token"}, {status: 401});
         }
 
         const { id } = await params;
         const id_blog = Number(id);
+
+        const existingBlog = await prisma.blog.findUnique({
+            where: { id_blog },
+            select: { images: true }
+        });
+
+        if (!existingBlog) {
+            return NextResponse.json({message: "Blog tidak ditemukan"}, {status: 404});
+        }
+
         const formData = await request.formData();
         
         const title = formData.get('title') as string;
@@ -45,10 +70,17 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
             const imageFile = formData.get('images') as File | null;
 
             if (imageFile) {
-                const arrayBuffer = await imageFile.arrayBuffer();
-                const buffer = Buffer.from(arrayBuffer);
-                const base64Image = `data:${imageFile.type};base64,${buffer.toString('base64')}`;
-                updateData.images = [base64Image]; 
+                const imageUrl = await saveFileToLocal(imageFile);
+                updateData.images = [imageUrl]; 
+
+                if (existingBlog.images && Array.isArray(existingBlog.images)) {
+                    for (const oldImgUrl of existingBlog.images) {
+                        await deleteLocalFile(oldImgUrl);
+                    }
+
+                } else if (typeof existingBlog.images === 'string') {
+                    await deleteLocalFile(existingBlog.images);
+                }
             }
         }
 
@@ -79,18 +111,35 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
         // Verify the token
         try {
             await verifyToken(session); 
-            
         } catch (error) {
             return NextResponse.json({message: "Invalid or expired token"}, {status: 401});
         }
         
-        // Data extraction and deletion
         const { id } = await params;
         const id_blog = Number(id);
+
+        const existingBlog = await prisma.blog.findUnique({
+            where: { id_blog },
+            select: { images: true }
+        });
+
+        if (!existingBlog) {
+            return NextResponse.json({message: "Blog tidak ditemukan"}, {status: 404});
+        }
 
         const deletedBlog = await prisma.blog.delete({
             where: { id_blog }
         });
+
+        if (existingBlog.images && Array.isArray(existingBlog.images)) {
+
+            for (const imgUrl of existingBlog.images) {
+                await deleteLocalFile(imgUrl);
+            }
+            
+        } else if (typeof existingBlog.images === 'string') {
+            await deleteLocalFile(existingBlog.images);
+        }
 
         return NextResponse.json({message: "Blog deleted successfully", data: deletedBlog}, {status: 200});
 

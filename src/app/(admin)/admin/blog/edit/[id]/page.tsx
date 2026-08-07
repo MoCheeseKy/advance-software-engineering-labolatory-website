@@ -4,9 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FiLoader, FiCheck, FiArrowLeft, FiImage } from 'react-icons/fi';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
-
-// IMPORT FUNGSI UPDATE YANG BARU DIBUAT
-import { UpdateBlog } from '@/lib/file-upload'; 
+import { UpdateBlog } from '@/lib/frontend-file-upload'; 
 
 export default function EditBlogPage() {
   const router = useRouter();

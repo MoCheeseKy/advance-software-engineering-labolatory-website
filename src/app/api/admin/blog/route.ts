@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
+import { saveFileToLocal } from '@/lib/backend-file-upload'; // Import dari Helper Backend
 
 // GET function to fetch all blog posts
 export async function GET(request: Request) {
@@ -88,10 +89,8 @@ export async function POST(request: Request) {
         let imagesArray: string[] = [];
 
         if (imageFile) {
-            const arrayBuffer = await imageFile.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-            const base64Image = `data:${imageFile.type};base64,${buffer.toString('base64')}`;
-            imagesArray.push(base64Image);
+            const imageUrl = await saveFileToLocal(imageFile);
+            imagesArray.push(imageUrl);
         }
 
         if (!title || !url) {
