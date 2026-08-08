@@ -47,7 +47,7 @@ export default function BlogCard({
         </h3>
 
         {/* Excerpt */}
-        <p className='text-[#8A8A8A] text-xs md:text-[13px] font-medium leading-relaxed mb-8 uppercase tracking-wide line-clamp-3 text-justify'>
+        <p className='text-[#8A8A8A] text-xs md:text-[13px] font-medium leading-relaxed mb-8 tracking-wide line-clamp-3 text-justify'>
           {excerpt}
         </p>
 

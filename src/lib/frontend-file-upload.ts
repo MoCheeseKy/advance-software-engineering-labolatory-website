@@ -18,6 +18,22 @@ interface UpdateBlogParams {
     keepOldImage: boolean;
 }
 
+interface UploadProductParams {
+    files: File[];
+    name: string;
+    developers?: string[];
+    texts?: string[];
+}
+
+interface UpdateProductParams {
+    productId: string;
+    files?: File[];
+    name: string;
+    developers?: string[];
+    texts?: string[];
+    existingImages?: string[]; 
+}
+
 export async function UploadBlog({ file, title, url, authors = [], texts = [] }: UploadBlogParams) {
     const options = {
         maxSizeMB: 0.5,          
@@ -78,6 +94,7 @@ export async function UpdateBlog({ blogId, file, title, url, authors = [], texts
                 fileType: 'image/webp',   
                 initialQuality: 0.8
             };
+
             const compressedImage = await imageCompression(file, options);
             const filename = file.name.split('.')[0];
             const webpFile = new File([compressedImage], `${filename}-compressed.webp`, { type: 'image/webp' });
@@ -101,6 +118,98 @@ export async function UpdateBlog({ blogId, file, title, url, authors = [], texts
 
     } catch (error) {
         console.error("Terjadi kesalahan saat update blog:", error);
+        throw error; 
+    }
+}
+
+// Upload Product
+export async function UploadProduct({ files, name, developers = [], texts = [] }: UploadProductParams) {
+    const formData = new FormData();
+
+    formData.append('name', name);
+    formData.append('developers', JSON.stringify(developers));
+    formData.append('texts', JSON.stringify(texts));
+
+    const options = {
+        maxSizeMB: 0.5,          
+        maxWidthOrHeight: 1200,   
+        useWebWorker: true,
+        fileType: 'image/webp',   
+        initialQuality: 0.8
+    };
+
+    try {
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const compressedImage = await imageCompression(file, options);
+            const filename = file.name.split('.')[0] || `product-image-${i}`;
+            const webpFile = new File([compressedImage], `${filename}-compressed.webp`, { type: 'image/webp' });
+
+            formData.append('images', webpFile);
+        }
+
+        const response = await fetch('/api/admin/product', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message || "Gagal mengunggah project");
+        }
+
+        return result;
+
+    } catch (error) {
+        console.error("Terjadi kesalahan saat proses kompresi/upload project:", error);
+        throw error; 
+    }
+}
+
+// Update Product
+export async function UpdateProduct({ productId, files = [], existingImages = [], name, developers = [], texts = [] }: UpdateProductParams) {
+    const formData = new FormData();
+
+    formData.append('name', name);
+    formData.append('developers', JSON.stringify(developers));
+    formData.append('texts', JSON.stringify(texts));
+    formData.append('existingImages', JSON.stringify(existingImages));
+
+    const options = {
+        maxSizeMB: 0.5,          
+        maxWidthOrHeight: 1200,   
+        useWebWorker: true,
+        fileType: 'image/webp',   
+        initialQuality: 0.8
+    };
+
+    try {
+        // Kompres dan tambahkan gambar-gambar baru (jika ada)
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const compressedImage = await imageCompression(file, options);
+            const filename = file.name.split('.')[0] || `product-new-image-${i}`;
+            const webpFile = new File([compressedImage], `${filename}-compressed.webp`, { type: 'image/webp' });
+
+            formData.append('images', webpFile);
+        }
+
+        const response = await fetch(`/api/admin/product/${productId}`, {
+            method: 'PUT',
+            body: formData,
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message || "Gagal mengupdate project");
+        }
+
+        return result;
+
+    } catch (error) {
+        console.error("Terjadi kesalahan saat proses kompresi/update project:", error);
         throw error; 
     }
 }

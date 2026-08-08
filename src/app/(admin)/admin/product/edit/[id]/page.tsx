@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { FiLoader, FiX, FiSave, FiImage, FiArrowLeft, FiPlus, FiTrash2 } from 'react-icons/fi';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
+import { UpdateProduct } from '@/lib/frontend-file-upload';
 
 interface Developer { name: string; role: string; }
 
@@ -48,22 +49,6 @@ function mapProduct(p: any): Product {
   };
 }
 
-function buildPayload(product: Product) {
-  return {
-    name:       product.name,
-    developers: product.developers.map(d =>
-      `${d.name}${d.role ? ` - ${d.role}` : ''}`
-    ),
-    texts: [
-      ...(product.group       ? [`group:${product.group}`]            : []),
-      ...(product.repo        ? [`repo:${product.repo}`]              : []),
-      ...(product.description ? [`desc:${product.description}`]       : []),
-      ...product.tags.map(t => `tag:${t}`),
-    ],
-    images: product.images,
-  };
-}
-
 export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
@@ -78,8 +63,12 @@ export default function EditProductPage() {
   const [description, setDescription] = useState('');
   const [tagsInput,   setTagsInput]   = useState('');
   const [developers,  setDevelopers]  = useState<Developer[]>([{ name: '', role: '' }]);
-  const [imageFiles,    setImageFiles]    = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  
+  // State dipisah untuk gambar lama (string URL) dan gambar baru (File)
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
+  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
+
   const [saving,   setSaving]   = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -100,7 +89,9 @@ export default function EditProductPage() {
         setDescription(p.description);
         setTagsInput(p.tags.join(', '));
         setDevelopers(p.developers.length > 0 ? p.developers : [{ name: '', role: '' }]);
-        setImagePreviews(p.images);
+        
+        // Simpan gambar dari database ke existingImages
+        setExistingImages(p.images);
 
       } catch (err: any) {
         setFetchError(err.message || 'Gagal memuat data.');
@@ -119,21 +110,26 @@ export default function EditProductPage() {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    const combined = [...imageFiles, ...files].slice(0, 5);
-    setImageFiles(combined);
+    const currentTotal = existingImages.length + newImageFiles.length;
+    const allowed = 5 - currentTotal;
+    if (allowed <= 0) return;
 
-    Promise.all(
-      combined.map(f => new Promise<string>((res) => {
-        const reader = new FileReader();
-        reader.onload = () => res(reader.result as string);
-        reader.readAsDataURL(f);
-      }))
-    ).then(setImagePreviews);
+    const toAdd = files.slice(0, allowed);
+    const updatedFiles = [...newImageFiles, ...toAdd];
+    setNewImageFiles(updatedFiles);
+
+    // Buat object URL hanya untuk preview agar cepat
+    const updatedPreviews = toAdd.map(f => URL.createObjectURL(f));
+    setNewImagePreviews([...newImagePreviews, ...updatedPreviews]);
   };
 
-  const handleRemoveImage = (idx: number) => {
-    setImagePreviews(prev => prev.filter((_, i) => i !== idx));
-    setImageFiles(prev => prev.filter((_, i) => i !== idx));
+  const handleRemoveExisting = (idx: number) => {
+    setExistingImages(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleRemoveNew = (idx: number) => {
+    setNewImageFiles(prev => prev.filter((_, i) => i !== idx));
+    setNewImagePreviews(prev => prev.filter((_, i) => i !== idx));
   };
 
   const addDev = () => setDevelopers(d => [...d, { name: '', role: '' }]);
@@ -149,27 +145,24 @@ export default function EditProductPage() {
     setSaving(true);
     setSaveError(null);
 
-    const updated: Product = {
-      id: Number(productId),
-      name,
-      group,
-      repo,
-      description,
-      tags: tagsInput.split(',').map(t => t.trim()).filter(Boolean),
-      developers,
-      images: imagePreviews,
-    };
-
     try {
-      const res = await fetch(`/api/admin/product/${productId}`, {
-        method:      'PUT',
-        headers:     { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body:        JSON.stringify(buildPayload(updated)),
-      });
+      const formattedDevelopers = developers.map(d => `${d.name}${d.role ? ` - ${d.role}` : ''}`);
+      const formattedTexts = [
+        ...(group ? [`group:${group}`] : []),
+        ...(repo ? [`repo:${repo}`] : []),
+        ...(description ? [`desc:${description}`] : []),
+        ...tagsInput.split(',').map(t => t.trim()).filter(Boolean).map(t => `tag:${t}`),
+      ];
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message ?? 'Gagal mengupdate project');
+      // Panggil UpdateProduct, ia akan mengompres newImageFiles lalu mengirim ke backend
+      await UpdateProduct({
+        productId,
+        name,
+        developers: formattedDevelopers,
+        texts: formattedTexts,
+        files: newImageFiles,
+        existingImages: existingImages
+      });
 
       router.push('/admin/product');
       router.refresh();
@@ -205,10 +198,11 @@ export default function EditProductPage() {
     );
   }
 
+  const totalImages = existingImages.length + newImageFiles.length;
+
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
       
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Link 
           href="/admin/product"
@@ -228,19 +222,13 @@ export default function EditProductPage() {
         </div>
       )}
 
-      {/* Form Content */}
       <form onSubmit={handleSave} className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* ── Left Column ── */}
           <div className="lg:col-span-2 space-y-6">
-
-            {/* Project Details */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
-              <h3 className="text-base font-bold text-gray-800 border-b border-gray-100 pb-3">
-                Project Details
-              </h3>
-
+              <h3 className="text-base font-bold text-gray-800 border-b border-gray-100 pb-3">Project Details</h3>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Project Name</label>
                 <input
@@ -252,7 +240,6 @@ export default function EditProductPage() {
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium text-black text-sm"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Description</label>
                 <textarea
@@ -263,7 +250,6 @@ export default function EditProductPage() {
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-y text-black text-sm"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Technologies / Tags</label>
                 <input
@@ -277,7 +263,6 @@ export default function EditProductPage() {
               </div>
             </div>
 
-            {/* Developers */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
               <div className="flex justify-between items-center border-b border-gray-100 pb-3">
                 <h3 className="text-base font-bold text-gray-800">Developers (Team)</h3>
@@ -289,7 +274,6 @@ export default function EditProductPage() {
                   <FiPlus /> Add Member
                 </button>
               </div>
-
               <div className="space-y-3">
                 {developers.map((dev, idx) => (
                   <div key={idx} className="flex gap-3 items-center">
@@ -326,11 +310,8 @@ export default function EditProductPage() {
 
           {/* ── Right Column ── */}
           <div className="space-y-6">
-
-            {/* Meta Info */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
               <h3 className="text-base font-bold text-gray-800 border-b border-gray-100 pb-3">Meta Info</h3>
-
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Group / Lab Division</label>
                 <input
@@ -342,7 +323,6 @@ export default function EditProductPage() {
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium text-black text-sm"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Repository URL</label>
                 <input
@@ -356,24 +336,31 @@ export default function EditProductPage() {
               </div>
             </div>
 
-            {/* Images */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <h3 className="text-base font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">
-                Project Images
-              </h3>
+              <h3 className="text-base font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4">Project Images</h3>
 
-              {imagePreviews.length > 0 && (
+              {(existingImages.length > 0 || newImagePreviews.length > 0) && (
                 <div className="grid grid-cols-2 gap-2 mb-4">
-                  {imagePreviews.map((src, idx) => (
-                    <div key={idx} className="relative group rounded-xl overflow-hidden border border-gray-200">
-                      <img
-                        src={src}
-                        alt={`preview-${idx}`}
-                        className="w-full h-24 object-cover"
-                      />
+                  {/* Render Gambar Lama */}
+                  {existingImages.map((src, idx) => (
+                    <div key={`old-${idx}`} className="relative group rounded-xl overflow-hidden border border-gray-200">
+                      <img src={src} alt="existing preview" className="w-full h-24 object-cover" />
                       <button
                         type="button"
-                        onClick={() => handleRemoveImage(idx)}
+                        onClick={() => handleRemoveExisting(idx)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <FiX className="text-xs" />
+                      </button>
+                    </div>
+                  ))}
+                  {/* Render Gambar Baru */}
+                  {newImagePreviews.map((src, idx) => (
+                    <div key={`new-${idx}`} className="relative group rounded-xl overflow-hidden border border-gray-200">
+                      <img src={src} alt="new preview" className="w-full h-24 object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveNew(idx)}
                         className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <FiX className="text-xs" />
@@ -383,11 +370,11 @@ export default function EditProductPage() {
                 </div>
               )}
 
-              {imagePreviews.length < 5 && (
+              {totalImages < 5 && (
                 <label className="w-full h-28 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-100 hover:border-primary transition-colors cursor-pointer text-center px-4">
                   <FiImage className="text-2xl mb-1" />
                   <span className="text-xs font-medium">Klik untuk upload</span>
-                  <span className="text-xs mt-0.5 text-gray-300">PNG, JPG, WEBP · Maks 5</span>
+                  <span className="text-xs mt-0.5 text-gray-300">PNG, JPG, WEBP · Maks {5 - totalImages} lagi</span>
                   <input
                     type="file"
                     accept="image/png,image/jpeg,image/webp"
@@ -401,7 +388,6 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        {/* Footer Actions */}
         <div className="flex justify-end gap-3 pt-2">
           <Link
             href="/admin/product"

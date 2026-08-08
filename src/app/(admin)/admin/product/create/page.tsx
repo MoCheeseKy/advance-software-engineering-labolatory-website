@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { FiArrowLeft, FiImage, FiSave, FiPlus, FiTrash2, FiLoader, FiX } from 'react-icons/fi';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { UploadProduct } from '@/lib/frontend-file-upload';
 
 export default function CreateProductPage() {
   const router = useRouter();
@@ -19,18 +20,11 @@ export default function CreateProductPage() {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    const newFiles = [...imageFiles, ...files].slice(0, 5); // max 5 images
+    const newFiles = [...imageFiles, ...files].slice(0, 5); 
     setImageFiles(newFiles);
 
-    // Generate previews
-    const readers = newFiles.map(file => {
-      return new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-    });
-    Promise.all(readers).then(setImagePreviews);
+    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+    setImagePreviews(newPreviews);
   };
 
   const handleRemoveImage = (index: number) => {
@@ -63,31 +57,27 @@ export default function CreateProductPage() {
     setSaveError(null);
 
     try {
-      const payload = {
-        name,
-        developers: developers.map(d => `${d.name}${d.role ? ` - ${d.role}` : ''}`),
-        texts: [
-          ...(group ? [`group:${group}`] : []),
-          ...(repo ? [`repo:${repo}`] : []),
-          ...(description ? [`desc:${description}`] : []),
-          ...tags.split(',').map(t => t.trim()).filter(Boolean).map(t => `tag:${t}`),
-        ],
-        images: imagePreviews, // base64 strings dari FileReader
-      };
+      const formattedDevelopers = developers.map(d => `${d.name}${d.role ? ` - ${d.role}` : ''}`);
+      const formattedTexts = [
+        ...(group ? [`group:${group}`] : []),
+        ...(repo ? [`repo:${repo}`] : []),
+        ...(description ? [`desc:${description}`] : []),
+        ...tags.split(',').map(t => t.trim()).filter(Boolean).map(t => `tag:${t}`),
+      ];
 
-      const res = await fetch('/api/admin/product', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
+      await UploadProduct({
+        files: imageFiles,
+        name: name,
+        developers: formattedDevelopers,
+        texts: formattedTexts
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message ?? 'Gagal menyimpan project');
-
       router.push('/admin/product');
+      router.refresh();
+      
     } catch (err: any) {
       setSaveError(err.message || 'Terjadi kesalahan saat menyimpan.');
+      
     } finally {
       setSaving(false);
     }
