@@ -1,17 +1,18 @@
 'use client';
-import React, { useState, useEffect } from 'react';
-import { FiLoader, FiX, FiSave, FiImage, FiArrowLeft, FiPlus, FiTrash2 } from 'react-icons/fi';
+import React, { useState, useEffect, useRef } from 'react';
+import { FiLoader, FiX, FiSave, FiImage, FiArrowLeft, FiPlus, FiTrash2, FiLink } from 'react-icons/fi';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { UpdateProduct } from '@/lib/frontend-file-upload';
 
 interface Developer { name: string; role: string; }
+interface ProjectUrl { label: string; url: string; }
 
 interface Product {
   id: number;
   name: string;
   group: string;
-  repo: string;
+  urls: ProjectUrl[];
   description: string;
   tags: string[];
   developers: Developer[];
@@ -37,11 +38,23 @@ function mapProduct(p: any): Product {
     .filter((t: string) => t.startsWith('tag:'))
     .map((t: string) => t.slice(4));
 
+  const urls: ProjectUrl[] = texts
+    .filter((t: string) => t.startsWith('url|'))
+    .map((t: string) => {
+      const parts = t.split('|');
+      return { label: parts[1] || '', url: parts[2] || '' };
+    });
+
+  const oldRepo = extractText(texts, 'repo');
+  if (oldRepo && urls.length === 0) {
+    urls.push({ label: 'Repository', url: oldRepo });
+  }
+
   return {
     id:          p.id_product,
     name:        p.name,
     group:       extractText(texts, 'group'),
-    repo:        extractText(texts, 'repo'),
+    urls:        urls,
     description: extractText(texts, 'desc'),
     tags,
     developers,
@@ -59,18 +72,20 @@ export default function EditProductPage() {
 
   const [name,        setName]        = useState('');
   const [group,       setGroup]       = useState('');
-  const [repo,        setRepo]        = useState('');
   const [description, setDescription] = useState('');
   const [tagsInput,   setTagsInput]   = useState('');
   const [developers,  setDevelopers]  = useState<Developer[]>([{ name: '', role: '' }]);
+  const [projectUrls, setProjectUrls] = useState<ProjectUrl[]>([{ label: 'Repository', url: '' }]);
   
-  // State dipisah untuk gambar lama (string URL) dan gambar baru (File)
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
 
   const [saving,   setSaving]   = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const editorRef = useRef<HTMLDivElement>(null);
+  const editorImageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function fetchProduct() {
@@ -85,17 +100,18 @@ export default function EditProductPage() {
         const p = mapProduct(data.data);
         setName(p.name);
         setGroup(p.group);
-        setRepo(p.repo);
         setDescription(p.description);
         setTagsInput(p.tags.join(', '));
         setDevelopers(p.developers.length > 0 ? p.developers : [{ name: '', role: '' }]);
-        
-        // Simpan gambar dari database ke existingImages
+        setProjectUrls(p.urls.length > 0 ? p.urls : [{ label: 'Repository', url: '' }]);
         setExistingImages(p.images);
+
+        if (editorRef.current) {
+          editorRef.current.innerHTML = p.description;
+        }
 
       } catch (err: any) {
         setFetchError(err.message || 'Gagal memuat data.');
-
       } finally {
         setFetching(false);
       }
@@ -118,7 +134,6 @@ export default function EditProductPage() {
     const updatedFiles = [...newImageFiles, ...toAdd];
     setNewImageFiles(updatedFiles);
 
-    // Buat object URL hanya untuk preview agar cepat
     const updatedPreviews = toAdd.map(f => URL.createObjectURL(f));
     setNewImagePreviews([...newImagePreviews, ...updatedPreviews]);
   };
@@ -133,12 +148,118 @@ export default function EditProductPage() {
   };
 
   const addDev = () => setDevelopers(d => [...d, { name: '', role: '' }]);
-
-  const removeDev = (idx: number) =>
-    setDevelopers(d => d.filter((_, i) => i !== idx));
-
+  const removeDev = (idx: number) => setDevelopers(d => d.filter((_, i) => i !== idx));
   const changeDev = (idx: number, field: 'name' | 'role', val: string) =>
     setDevelopers(d => d.map((dev, i) => i === idx ? { ...dev, [field]: val } : dev));
+
+  const handleAddUrl = () => setProjectUrls([...projectUrls, { label: '', url: '' }]);
+  const handleRemoveUrl = (idx: number) => setProjectUrls(projectUrls.filter((_, i) => i !== idx));
+  const handleUrlChange = (idx: number, field: 'label' | 'url', value: string) => {
+    const newUrls = [...projectUrls];
+    newUrls[idx][field] = value;
+    setProjectUrls(newUrls);
+  };
+
+  const handleEditorInput = () => {
+    if (editorRef.current) {
+      setDescription(editorRef.current.innerHTML);
+    }
+  };
+
+  const execCommand = (command: string, value: string | undefined = undefined) => {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+    document.execCommand(command, false, value);
+    handleEditorInput(); 
+  };
+
+  const setListType = (typeValue: string | null) => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    let node: Node | null = sel.anchorNode;
+    while (node && node !== editorRef.current) {
+      if (node.nodeName === 'OL') {
+        if (typeValue) {
+          (node as HTMLOListElement).type = typeValue;
+        } else {
+          (node as HTMLOListElement).removeAttribute('type');
+        }
+        break;
+      }
+      node = node.parentNode;
+    }
+    handleEditorInput();
+  };
+
+  const handleFormat = (tool: string) => {
+    switch (tool) {
+      case 'B': execCommand('bold'); break;
+      case 'I': execCommand('italic'); break;
+      case 'U': execCommand('underline'); break;
+      case 'H1': execCommand('formatBlock', 'H1'); break;
+      case 'H2': execCommand('formatBlock', 'H2'); break;
+      case 'Quote':
+        const sel = window.getSelection();
+        let isQuote = false;
+        if (sel && sel.rangeCount > 0) {
+          let node = sel.anchorNode;
+          while (node && node !== editorRef.current) {
+            if (node.nodeName === 'BLOCKQUOTE') {
+              isQuote = true;
+              break;
+            }
+            node = node.parentNode;
+          }
+        }
+        execCommand('formatBlock', isQuote ? 'DIV' : 'BLOCKQUOTE');
+        break;
+      case 'Number':
+        execCommand('insertOrderedList');
+        setListType(null); 
+        break;
+      case 'Letter':
+        execCommand('insertOrderedList');
+        setListType('A'); 
+        break;
+      case 'Bullet':
+        execCommand('insertUnorderedList');
+        break;
+      case 'Link':
+        const promptUrl = window.prompt('Masukkan URL Link (contoh: https://google.com):');
+        if (promptUrl) execCommand('createLink', promptUrl);
+        break;
+      case 'Image': editorImageInputRef.current?.click(); break;
+      default: break;
+    }
+  };
+
+  const handleEditorImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    if (file) {
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const res = await fetch('/api/admin/upload/image', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.message || 'Gagal upload ke server');
+
+        execCommand('insertImage', data.imageUrl);
+      } catch (err) {
+        console.error("Gagal membaca gambar:", err);
+        alert("Gagal memproses gambar.");
+      }
+    }
+   
+    if (editorImageInputRef.current) {
+      editorImageInputRef.current.value = '';
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,14 +268,18 @@ export default function EditProductPage() {
 
     try {
       const formattedDevelopers = developers.map(d => `${d.name}${d.role ? ` - ${d.role}` : ''}`);
+      
+      const formattedUrls = projectUrls
+        .filter(item => item.label && item.url) 
+        .map(item => `url|${item.label.trim()}|${item.url.trim()}`); 
+
       const formattedTexts = [
         ...(group ? [`group:${group}`] : []),
-        ...(repo ? [`repo:${repo}`] : []),
+        ...formattedUrls,
         ...(description ? [`desc:${description}`] : []),
         ...tagsInput.split(',').map(t => t.trim()).filter(Boolean).map(t => `tag:${t}`),
       ];
 
-      // Panggil UpdateProduct, ia akan mengompres newImageFiles lalu mengirim ke backend
       await UpdateProduct({
         productId,
         name,
@@ -169,7 +294,6 @@ export default function EditProductPage() {
 
     } catch (err: any) {
       setSaveError(err.message || 'Terjadi kesalahan saat menyimpan.');
-
     } finally {
       setSaving(false);
     }
@@ -240,16 +364,55 @@ export default function EditProductPage() {
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium text-black text-sm"
                 />
               </div>
+              
+              {/* Rich Text Editor Description */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Description</label>
-                <textarea
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  placeholder="Detail lengkap mengenai aplikasi..."
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-y text-black text-sm"
-                />
+                <div className="border border-gray-200 rounded-xl overflow-hidden">
+                  <div className="bg-gray-50 border-b border-gray-200 px-4 py-2 flex gap-2 overflow-x-auto">
+                    {['B', 'I', 'U', 'H1', 'H2', 'Quote', 'Number', 'Letter', 'Bullet', 'Link', 'Image'].map(tool => (
+                      <button 
+                        key={tool} 
+                        type="button" 
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleFormat(tool);
+                        }}
+                        className="px-3 py-1 text-sm font-semibold text-gray-600 hover:bg-gray-200 rounded transition-colors whitespace-nowrap"
+                      >
+                        {tool}
+                      </button>
+                    ))}
+                  </div>
+
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    ref={editorImageInputRef} 
+                    onChange={handleEditorImageUpload} 
+                    className="hidden" 
+                  />
+
+                  <div
+                    ref={editorRef}
+                    contentEditable
+                    suppressContentEditableWarning
+                    onInput={handleEditorInput}
+                    className="w-full h-64 p-4 focus:outline-none overflow-y-auto text-black bg-white 
+                    [&_b]:font-bold [&_i]:italic [&_u]:underline 
+                    [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:mt-2
+                    [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-3 [&_h2]:mt-2
+                    [&_blockquote]:border-l-4 [&_blockquote]:border-gray-400 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:my-4 [&_blockquote]:text-gray-600
+                    [&_a]:text-blue-600 [&_a]:underline
+                    [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-4
+                    [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:my-2
+                    [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:my-2
+                    [&_ol[type=A]]:list-[upper-alpha]
+                    [&_li]:mb-1 text-sm"
+                  />
+                </div>
               </div>
+
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Technologies / Tags</label>
                 <input
@@ -310,6 +473,7 @@ export default function EditProductPage() {
 
           {/* ── Right Column ── */}
           <div className="space-y-6">
+            
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
               <h3 className="text-base font-bold text-gray-800 border-b border-gray-100 pb-3">Meta Info</h3>
               <div>
@@ -323,16 +487,49 @@ export default function EditProductPage() {
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium text-black text-sm"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Repository URL</label>
-                <input
-                  type="url"
-                  required
-                  value={repo}
-                  onChange={e => setRepo(e.target.value)}
-                  placeholder="https://github.com/..."
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium text-black text-sm"
-                />
+            </div>
+
+            {/* Project URLs */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+              <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+                <h3 className="text-base font-bold text-gray-800">Project URLs</h3>
+                <button type="button" onClick={handleAddUrl} className="text-primary text-sm font-bold flex items-center gap-1 hover:text-orange-600">
+                  <FiPlus /> Add URL
+                </button>
+              </div>
+              <div className="space-y-4">
+                {projectUrls.map((item, idx) => (
+                  <div key={idx} className="flex gap-2 items-start bg-gray-50 p-3 rounded-xl border border-gray-200">
+                    <div className="flex-1 space-y-3">
+                      <div>
+                        <input
+                          type="text"
+                          required
+                          value={item.label}
+                          onChange={(e) => handleUrlChange(idx, 'label', e.target.value)}
+                          placeholder="Label (e.g. Repository, GDD)"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm text-gray-900 font-semibold"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FiLink className="text-gray-400" />
+                        <input
+                          type="url"
+                          required
+                          value={item.url}
+                          onChange={(e) => handleUrlChange(idx, 'url', e.target.value)}
+                          placeholder="https://..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm text-blue-600"
+                        />
+                      </div>
+                    </div>
+                    {projectUrls.length > 1 && (
+                      <button type="button" onClick={() => handleRemoveUrl(idx)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors mt-1">
+                        <FiTrash2 />
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
 

@@ -46,11 +46,23 @@ export default function Product() {
     return () => clearInterval(timer);
   }, [products.length]);
 
-  // Helper untuk mengekstrak deskripsi
+  // Helper untuk mengekstrak dan membersihkan deskripsi dari tag HTML
   const getDescription = (texts: string[]) => {
     if (!texts) return 'Deskripsi tidak tersedia.';
     const desc = texts.find((t: string) => t.startsWith('desc:'));
-    return desc ? desc.slice(5) : 'Deskripsi tidak tersedia.';
+    
+    if (desc) {
+      // Potong prefix 'desc:' 
+      let rawHtml = desc.slice(5);
+      // Hapus tag HTML menggunakan Regex, ganti dengan spasi agar teks tidak menempel
+      let plainText = rawHtml.replace(/<[^>]+>/g, ' ');
+      // Hapus spasi berlebih
+      plainText = plainText.replace(/\s+/g, ' ').trim();
+      
+      return plainText;
+    }
+    
+    return 'Deskripsi tidak tersedia.';
   };
 
   return (
