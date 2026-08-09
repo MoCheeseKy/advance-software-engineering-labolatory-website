@@ -15,8 +15,8 @@ export default function BlogPage() {
   useEffect(() => {
     const fetchBlogs = async () => {
       setLoading(true);
+
       try {
-        // Fetch ke endpoint publik
         const response = await fetch(`/api/blog?page=${currentPage}&limit=6`);
         const result = await response.json();
 
@@ -25,11 +25,11 @@ export default function BlogPage() {
           setTotalPages(result.meta.totalPages); 
 
         } else {
-          console.error("Gagal mengambil data blog:", result.message);
+          console.error("Failed Fetching Blog Data: ", result.message);
         }
 
       } catch (error) {
-        console.error("Terjadi kesalahan jaringan:", error);
+        console.error("Internal Server Error: ", error);
 
       } finally {
         setLoading(false);
@@ -73,6 +73,7 @@ export default function BlogPage() {
   return (
     <section className='w-full bg-white text-black min-h-screen'>
       <Wrapper className='flex flex-col items-center pt-16 md:pt-32 pb-64'>
+
         {/* Title */}
         <div className='flex flex-col items-center mb-16'>
           <h2 className='text-primary text-[32px] md:text-[40px] font-bold pb-2 relative after:content-[""] after:absolute after:bottom-0 after:left-1/4 after:w-1/2 after:h-[4px] after:bg-primary'>
@@ -112,7 +113,7 @@ export default function BlogPage() {
 
               {blogs.length === 0 && (
                  <div className="col-span-full text-center text-gray-500 py-10">
-                    Belum ada blog yang diterbitkan.
+                    No Blog Published Yet
                  </div>
               )}
             </div>
@@ -120,6 +121,7 @@ export default function BlogPage() {
             {/* Pagination Controls */}
             {totalPages > 1 && (
               <div className='flex items-center justify-center gap-3 mt-4'>
+
                 {/* Previous Button */}
                 <button 
                   onClick={handlePrevPage}
@@ -134,7 +136,7 @@ export default function BlogPage() {
                   <span>Previous</span>
                 </button>
 
-                {/* Dinamis Render Angka Paginasi */}
+                {/*  Pagination Number Button*/}
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
                   <button 
                     key={pageNum}

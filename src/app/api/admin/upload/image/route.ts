@@ -8,12 +8,14 @@ export async function POST(request: Request) {
         // Cek Autentikasi
         const cookie = await cookies();
         const session = cookie.get('session')?.value;
+        
         if (!session) {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
         
         try {
             await verifyToken(session);
+
         } catch (error) {
             return NextResponse.json({ message: "Invalid or expired token" }, { status: 401 });
         }
@@ -22,7 +24,7 @@ export async function POST(request: Request) {
         const file = formData.get('image') as File | null;
 
         if (!file) {
-            return NextResponse.json({ message: "Tidak ada file yang diunggah" }, { status: 400 });
+            return NextResponse.json({ message: "No Image Uploaded" }, { status: 400 });
         }
 
         const imageUrl = await saveFileToLocal(file);
@@ -30,7 +32,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ imageUrl }, { status: 200 });
 
     } catch (error) {
-        console.error("Gagal upload gambar editor:", error);
+        console.error("Failed Upload Image:", error);
         return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
     }
 }

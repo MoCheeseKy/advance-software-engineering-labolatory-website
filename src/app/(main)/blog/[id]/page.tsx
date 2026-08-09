@@ -57,7 +57,6 @@ export default async function BlogDetail({ params,}: {params: Promise<{ id: stri
         </div>
 
         <div className='w-full max-w-5xl mb-12 flex flex-col items-center'>
-          {/* PERUBAHAN DI SINI: Frame mengikuti foto dengan w-full h-auto */}
           <div className='relative w-full flex justify-center mb-6'>
             <Image
               src={imageUrl}

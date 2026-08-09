@@ -112,6 +112,7 @@ export default function EditProductPage() {
 
       } catch (err: any) {
         setFetchError(err.message || 'Gagal memuat data.');
+
       } finally {
         setFetching(false);
       }
@@ -213,21 +214,26 @@ export default function EditProductPage() {
         }
         execCommand('formatBlock', isQuote ? 'DIV' : 'BLOCKQUOTE');
         break;
+
       case 'Number':
         execCommand('insertOrderedList');
         setListType(null); 
         break;
+
       case 'Letter':
         execCommand('insertOrderedList');
         setListType('A'); 
         break;
+
       case 'Bullet':
         execCommand('insertUnorderedList');
         break;
+
       case 'Link':
         const promptUrl = window.prompt('Masukkan URL Link (contoh: https://google.com):');
         if (promptUrl) execCommand('createLink', promptUrl);
         break;
+        
       case 'Image': editorImageInputRef.current?.click(); break;
       default: break;
     }
@@ -247,12 +253,13 @@ export default function EditProductPage() {
         });
         const data = await res.json();
 
-        if (!res.ok) throw new Error(data.message || 'Gagal upload ke server');
+        if (!res.ok) throw new Error(data.message || 'Failed to Upload the Image');
 
         execCommand('insertImage', data.imageUrl);
+
       } catch (err) {
-        console.error("Gagal membaca gambar:", err);
-        alert("Gagal memproses gambar.");
+        console.error("Failed Processing the Image: ", err);
+        alert("Failed Processing the Image");
       }
     }
    
@@ -293,7 +300,7 @@ export default function EditProductPage() {
       router.refresh();
 
     } catch (err: any) {
-      setSaveError(err.message || 'Terjadi kesalahan saat menyimpan.');
+      setSaveError(err.message || 'Error Saving Data.');
     } finally {
       setSaving(false);
     }
@@ -303,7 +310,7 @@ export default function EditProductPage() {
     return (
       <div className="flex flex-col justify-center items-center py-24 gap-3 text-gray-500">
         <FiLoader className="animate-spin text-4xl text-primary" />
-        <span className="font-medium">Memuat data project...</span>
+        <span className="font-medium">Fetching Project Data...</span>
       </div>
     );
   }
@@ -312,10 +319,10 @@ export default function EditProductPage() {
     return (
       <div className="max-w-4xl mx-auto mt-8">
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-6 text-center shadow-sm">
-          <p className="text-lg font-bold mb-2">Gagal Memuat Data</p>
+          <p className="text-lg font-bold mb-2">Failed Fetching Data</p>
           <p className="text-sm">{fetchError}</p>
           <Link href="/admin/product" className="inline-block mt-4 px-6 py-2.5 bg-white text-red-600 border border-red-200 hover:bg-red-50 rounded-xl font-bold transition-colors">
-            &larr; Kembali
+            &larr; Back
           </Link>
         </div>
       </div>
@@ -336,7 +343,7 @@ export default function EditProductPage() {
         </Link>
         <div>
           <h2 className="text-3xl font-bold text-gray-800">Edit Project</h2>
-          <p className="text-gray-500 mt-1">Update informasi project yang sudah ada.</p>
+          <p className="text-gray-500 mt-1">Update Project Information.</p>
         </div>
       </div>
 
@@ -349,7 +356,7 @@ export default function EditProductPage() {
       <form onSubmit={handleSave} className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* ── Left Column ── */}
+          {/* Left Column */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
               <h3 className="text-base font-bold text-gray-800 border-b border-gray-100 pb-3">Project Details</h3>
@@ -471,7 +478,7 @@ export default function EditProductPage() {
             </div>
           </div>
 
-          {/* ── Right Column ── */}
+          {/* Right Column */}
           <div className="space-y-6">
             
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
@@ -538,6 +545,7 @@ export default function EditProductPage() {
 
               {(existingImages.length > 0 || newImagePreviews.length > 0) && (
                 <div className="grid grid-cols-2 gap-2 mb-4">
+
                   {/* Render Gambar Lama */}
                   {existingImages.map((src, idx) => (
                     <div key={`old-${idx}`} className="relative group rounded-xl overflow-hidden border border-gray-200">
@@ -551,6 +559,7 @@ export default function EditProductPage() {
                       </button>
                     </div>
                   ))}
+                  
                   {/* Render Gambar Baru */}
                   {newImagePreviews.map((src, idx) => (
                     <div key={`new-${idx}`} className="relative group rounded-xl overflow-hidden border border-gray-200">
@@ -570,7 +579,7 @@ export default function EditProductPage() {
               {totalImages < 5 && (
                 <label className="w-full h-28 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-100 hover:border-primary transition-colors cursor-pointer text-center px-4">
                   <FiImage className="text-2xl mb-1" />
-                  <span className="text-xs font-medium">Klik untuk upload</span>
+                  <span className="text-xs font-medium">Click to Upload</span>
                   <span className="text-xs mt-0.5 text-gray-300">PNG, JPG, WEBP · Maks {5 - totalImages} lagi</span>
                   <input
                     type="file"

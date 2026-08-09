@@ -11,22 +11,23 @@ export default function Product() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. Mengambil data dari Backend
   useEffect(() => {
     const fetchLatestProducts = async () => {
       try {
         setLoading(true);
-        // Memanggil API Publik dengan limit 5 untuk ditampilkan di carousel
         const response = await fetch('/api/product?page=1&limit=5');
         const result = await response.json();
 
         if (response.ok) {
           setProducts(result.data);
+
         } else {
           console.error("Gagal mengambil data product:", result.message);
         }
+
       } catch (error) {
         console.error("Terjadi kesalahan jaringan:", error);
+
       } finally {
         setLoading(false);
       }
@@ -35,9 +36,8 @@ export default function Product() {
     fetchLatestProducts();
   }, []);
 
-  // 2. Mengatur interval carousel (bergantung pada panjang data products)
   useEffect(() => {
-    if (products.length === 0) return; // Hentikan timer jika data kosong
+    if (products.length === 0) return; 
 
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % products.length);
@@ -46,23 +46,19 @@ export default function Product() {
     return () => clearInterval(timer);
   }, [products.length]);
 
-  // Helper untuk mengekstrak dan membersihkan deskripsi dari tag HTML
   const getDescription = (texts: string[]) => {
     if (!texts) return 'Deskripsi tidak tersedia.';
     const desc = texts.find((t: string) => t.startsWith('desc:'));
     
     if (desc) {
-      // Potong prefix 'desc:' 
       let rawHtml = desc.slice(5);
-      // Hapus tag HTML menggunakan Regex, ganti dengan spasi agar teks tidak menempel
       let plainText = rawHtml.replace(/<[^>]+>/g, ' ');
-      // Hapus spasi berlebih
       plainText = plainText.replace(/\s+/g, ' ').trim();
       
       return plainText;
     }
     
-    return 'Deskripsi tidak tersedia.';
+    return 'Description Not Found.';
   };
 
   return (
@@ -83,15 +79,15 @@ export default function Product() {
             <FiLoader className="text-4xl animate-spin text-primary" />
             <p className="text-gray-500 font-medium">Memuat project terbaru...</p>
           </div>
+
         ) : products.length > 0 ? (
-          /* Carousel Container */
           <div className='relative w-full max-w-[900px] overflow-hidden'>
             <div
               className='flex transition-transform duration-700 ease-in-out'
               style={{ transform: `translateX(-${currentIndex * 100}%)` }}
             >
+
               {products.map((product) => {
-                // Ekstraksi URL Gambar (Fallback ke placeholder)
                 const imageUrl = (Array.isArray(product.images) && product.images.length > 0) 
                   ? product.images[0] 
                   : (typeof product.images === 'string' ? product.images : 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=800');
@@ -101,10 +97,12 @@ export default function Product() {
                     key={product.id_product}
                     className='relative w-full shrink-0 aspect-[16/9] md:aspect-[2/1] group'
                   >
+
                     <Link
                       href={`/product/${product.id_product}`}
                       className='block w-full h-full relative'
                     >
+
                       <Image
                         src={imageUrl}
                         alt={product.name}
@@ -146,10 +144,10 @@ export default function Product() {
               ))}
             </div>
           </div>
+
         ) : (
-          /* Empty State */
           <div className="text-center text-gray-500 py-10 w-full">
-            Belum ada project yang diterbitkan.
+            No Projects Published Yet.
           </div>
         )}
 

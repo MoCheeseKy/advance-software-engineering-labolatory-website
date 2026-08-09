@@ -11,16 +11,10 @@ interface BlogCardProps {
   excerpt: string;
 }
 
-export default function BlogCard({
-  id,
-  image,
-  date,
-  category,
-  title,
-  excerpt,
-}: BlogCardProps) {
+export default function BlogCard({ id, image, date, category, title, excerpt, }: BlogCardProps) {
   return (
     <div className='flex flex-col bg-white rounded-[32px] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 h-full'>
+
       {/* Image Container */}
       <div className='relative h-[240px] w-full shrink-0'>
         <img
@@ -28,7 +22,8 @@ export default function BlogCard({
           alt={title}
           className='w-full h-full object-cover rounded-t-[30px] rounded-bl-[32px]'
         />
-        {/* Date Badge - overlapping 50% on image and content */}
+
+        {/* Date Badge */}
         <div className='absolute bottom-0 right-0 translate-y-1/2 bg-primary text-white px-6 py-2.5 rounded-l-2xl text-sm font-bold tracking-wide shadow-md z-10'>
           {date}
         </div>
@@ -36,6 +31,7 @@ export default function BlogCard({
 
       {/* Content Container */}
       <div className='flex flex-col flex-grow p-8 pt-10 md:p-9 md:pt-11'>
+
         {/* Category */}
         <span className='text-primary font-bold text-sm mb-3 tracking-wider'>
           {category}
@@ -59,7 +55,7 @@ export default function BlogCard({
               colorType='primary'
               className='w-full !rounded-full px-8 py-2.5 text-sm font-bold border-2 border-primary hover:bg-primary hover:text-white transition-all duration-200'
             >
-              Baca Selengkapnya
+              Read More
             </Button>
           </Link>
         </div>

@@ -11,13 +11,7 @@ export interface ProductCardProps {
   tags: string[];
 }
 
-export default function ProductCard({
-  id,
-  image,
-  title,
-  description,
-  tags,
-}: ProductCardProps) {
+export default function ProductCard({ id, image, title, description, tags }: ProductCardProps) {
   return (
     <div className='flex flex-col bg-white rounded-[32px] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 h-full'>
       
@@ -40,7 +34,7 @@ export default function ProductCard({
           {title}
         </h3>
 
-        {/* Description (Diadaptasi dari excerpt Blog) */}
+        {/* Description */}
         <p className='text-[#8A8A8A] text-xs md:text-[13px] font-medium leading-relaxed mb-6 tracking-wide line-clamp-3 text-justify'>
           {description}
         </p>
@@ -57,7 +51,7 @@ export default function ProductCard({
           ))}
         </div>
 
-        {/* Button (Menggunakan komponen Shared Button seperti di Blog) */}
+        {/* Button */}
         <div className='mt-auto flex justify-center'>
           <Link href={`/product/${id}`} className='w-fit'>
             <Button
@@ -65,11 +59,10 @@ export default function ProductCard({
               colorType='primary'
               className='w-full !rounded-full px-18 py-0.5 text-sm font-bold border-2 border-primary hover:bg-primary hover:text-white transition-all duration-200'
             >
-              Lihat Detail
+              View Detail
             </Button>
           </Link>
         </div>
-        
       </div>
     </div>
   );

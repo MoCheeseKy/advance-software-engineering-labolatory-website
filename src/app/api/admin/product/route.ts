@@ -74,8 +74,6 @@ export async function POST(request: Request) {
         }
 
         const id_admin = sessionData.id;
-
-        // Gunakan request.formData() karena ada upload file fisik
         const formData = await request.formData();
         
         const name = formData.get('name') as string;
@@ -85,11 +83,9 @@ export async function POST(request: Request) {
         const developers = developersString ? JSON.parse(developersString) : [];
         const texts = textsString ? JSON.parse(textsString) : [];
 
-        // Ambil SEMUA file yang dilampirkan dengan key 'images'
         const imageFiles = formData.getAll('images') as File[];
         let imagesArray: string[] = [];
 
-        // Lakukan perulangan untuk menyimpan setiap file fisik ke lokal
         for (const file of imageFiles) {
             if (file && file.size > 0) {
                 const imageUrl = await saveProductFileToLocal(file);
@@ -101,7 +97,6 @@ export async function POST(request: Request) {
             return NextResponse.json({message: "Missing required fields"}, {status: 400});
         }
 
-        // Simpan ke database
         const newProduct = await prisma.product.create({
             data: {
                 id_admin: Number(id_admin),

@@ -6,16 +6,17 @@ import { saveFileToLocal } from '@/lib/backend-file-upload';
 import { unlink } from 'fs/promises'; 
 import path from 'path';
 
+// Delete Local File if the Blog Deleted Function
 async function deleteLocalFile(fileUrl: string) {
     try {
         if (!fileUrl || !fileUrl.startsWith('/uploads/')) return;
         
         const filePath = path.join(process.cwd(), 'public', fileUrl);
         await unlink(filePath);
-        console.log(`Berhasil menghapus file fisik: ${filePath}`);
+        console.log(`Deleted File: ${filePath}`);
 
     } catch (error) {
-        console.error(`Gagal menghapus file ${fileUrl} (Mungkin file sudah tidak ada):`, error);
+        console.error(`Failed Delete Fiule ${fileUrl} :`, error);
     }
 }
 
@@ -46,7 +47,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         });
 
         if (!existingBlog) {
-            return NextResponse.json({message: "Blog tidak ditemukan"}, {status: 404});
+            return NextResponse.json({message: "Blog Not Found"}, {status: 404});
         }
 
         const formData = await request.formData();
@@ -124,7 +125,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
         });
 
         if (!existingBlog) {
-            return NextResponse.json({message: "Blog tidak ditemukan"}, {status: 404});
+            return NextResponse.json({message: "Blog Not Found"}, {status: 404});
         }
 
         const deletedBlog = await prisma.blog.delete({

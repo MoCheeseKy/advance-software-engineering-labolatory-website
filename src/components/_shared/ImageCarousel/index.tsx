@@ -6,7 +6,6 @@ import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 export default function ImageCarousel({ images, alt }: { images: string[], alt: string }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Timer untuk auto-slide setiap 4 detik
   useEffect(() => {
     if (images.length <= 1) return;
     
@@ -29,11 +28,13 @@ export default function ImageCarousel({ images, alt }: { images: string[], alt: 
 
   return (
     <div className="relative w-full max-w-5xl mx-auto mb-16 rounded-2xl md:rounded-3xl overflow-hidden shadow-sm bg-gray-50 group">
+
       {/* Slider Container */}
       <div
         className="flex transition-transform duration-500 ease-in-out h-[40vh] md:h-[70vh]"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
+
         {images.map((src, idx) => (
           <div key={idx} className="w-full shrink-0 relative h-full flex justify-center items-center">
             <Image
@@ -47,10 +48,11 @@ export default function ImageCarousel({ images, alt }: { images: string[], alt: 
         ))}
       </div>
 
-      {/* Navigasi (Hanya tampil jika gambar lebih dari 1) */}
+      {/* Navigation */}
       {images.length > 1 && (
         <>
-          {/* Tombol Kiri/Kanan (Muncul saat di-hover) */}
+
+          {/* Buttons */}
           <button
             onClick={prevSlide}
             className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/30 hover:bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
@@ -64,7 +66,7 @@ export default function ImageCarousel({ images, alt }: { images: string[], alt: 
             <FiChevronRight size={24} />
           </button>
 
-          {/* Indikator Titik (Dots) */}
+          {/* Dots Indicator */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
             {images.map((_, idx) => (
               <button

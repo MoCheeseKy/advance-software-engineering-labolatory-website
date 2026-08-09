@@ -44,28 +44,35 @@ export default function EditBlogPage() {
         setEditUrl(targetBlog.url);
         
         let contentString = '';
+
         if (Array.isArray(targetBlog.texts) && targetBlog.texts.length > 0) {
           contentString = targetBlog.texts.join('<br><br>');
+
         } else if (typeof targetBlog.texts === 'string') {
           contentString = targetBlog.texts;
         }
         
         initialContentHtml.current = contentString;
+
         if (editorRef.current) {
           editorRef.current.innerHTML = contentString;
         }
 
         let coverPreview = null;
+
         if (Array.isArray(targetBlog.images) && targetBlog.images.length > 0) {
           coverPreview = targetBlog.images[0];
+
         } else if (typeof targetBlog.images === 'string') {
           coverPreview = targetBlog.images;
         }
+
         setEditImagePreview(coverPreview);
 
       } catch (err: any) {
         console.error('Fetch specific blog error:', err);
         setError(err.message ?? 'Unable to fetch data.');
+
       } finally {
         setLoading(false);
       }
@@ -103,13 +110,17 @@ export default function EditBlogPage() {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
     let node: Node | null = sel.anchorNode;
+
     while (node && node !== editorRef.current) {
+
       if (node.nodeName === 'OL') {
         if (typeValue) {
           (node as HTMLOListElement).type = typeValue;
+
         } else {
           (node as HTMLOListElement).removeAttribute('type');
         }
+
         break;
       }
       node = node.parentNode;
@@ -126,9 +137,12 @@ export default function EditBlogPage() {
       case 'Quote': 
         const sel = window.getSelection();
         let isQuote = false;
+
         if (sel && sel.rangeCount > 0) {
           let node = sel.anchorNode;
+
           while (node && node !== editorRef.current) {
+
             if (node.nodeName === 'BLOCKQUOTE') {
               isQuote = true;
               break;
@@ -138,21 +152,26 @@ export default function EditBlogPage() {
         }
         execCommand('formatBlock', isQuote ? 'DIV' : 'BLOCKQUOTE'); 
         break;
+
       case 'Number':
         execCommand('insertOrderedList');
         setListType(null);
         break;
+
       case 'Letter':
         execCommand('insertOrderedList');
         setListType('A'); 
         break;
+
       case 'Bullet':
         execCommand('insertUnorderedList');
         break;
+
       case 'Link':
         const url = window.prompt('Masukkan URL Link (contoh: https://google.com):');
         if (url) execCommand('createLink', url);
         break;
+
       case 'Image':
         editorImageInputRef.current?.click();
         break;
@@ -162,14 +181,17 @@ export default function EditBlogPage() {
 
   const handleEditorImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    
     if (file) {
       try {
         const base64Url = await toBase64(file);
         execCommand('insertImage', base64Url);
+
       } catch (err) {
-        alert("Gagal memproses gambar.");
+        alert("Failed to Process the Image.");
       }
     }
+
     if (editorImageInputRef.current) {
       editorImageInputRef.current.value = '';
     }
@@ -181,7 +203,7 @@ export default function EditBlogPage() {
     const finalContent = editorRef.current?.innerHTML || '';
 
     if (!finalContent || finalContent.trim() === '<br>' || finalContent.trim() === '') {
-      setActionError("Content artikel tidak boleh kosong.");
+      setActionError("Article Content Missing.");
       return;
     }
     

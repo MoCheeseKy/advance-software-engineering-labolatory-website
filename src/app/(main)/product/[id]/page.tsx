@@ -8,11 +8,7 @@ function extractText(texts: string[], prefix: string): string {
   return entry ? entry.slice(prefix.length + 1) : '';
 }
 
-export default async function ProductDetail({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function ProductDetail({ params }: { params: Promise<{ id: string }>; }) {
   const resolvedParams = await params;
   const { id } = resolvedParams;
 
@@ -35,7 +31,7 @@ export default async function ProductDetail({
 
   const texts: string[] = product.texts ?? [];
   const group = extractText(texts, 'group') || 'Independent Project';
-  const description = extractText(texts, 'desc') || 'Tidak ada deskripsi.';
+  const description = extractText(texts, 'desc') || 'No Project Description.';
   const tags = texts.filter(t => t.startsWith('tag:')).map(t => t.slice(4));
 
   const projectUrls = texts
@@ -50,14 +46,14 @@ export default async function ProductDetail({
     projectUrls.push({ label: 'Repository', url: legacyRepo });
   }
 
-  // --- PEMBARUAN: Ambil SELURUH array gambar ---
   let imagesArray: string[] = [];
   if (Array.isArray(product.images) && product.images.length > 0) {
     imagesArray = product.images;
+
   } else if (typeof product.images === 'string' && product.images) {
     imagesArray = [product.images];
+
   } else {
-    // Gambar Fallback
     imagesArray = ['https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=800'];
   }
 
@@ -82,10 +78,9 @@ export default async function ProductDetail({
           </p>
         </div>
 
-        {/* --- PEMBARUAN: Gunakan Komponen ImageCarousel --- */}
         <ImageCarousel images={imagesArray} alt={product.name} />
 
-        {/* Main Content (Deskripsi) */}
+        {/* Main Content */}
         <div className='max-w-4xl w-full flex flex-col gap-6 text-sm md:text-[15px] lg:text-base leading-relaxed text-justify mb-16'>
           <div
             className='max-w-none font-medium text-gray-700
@@ -105,13 +100,13 @@ export default async function ProductDetail({
           />
         </div>
 
-        {/* Meta Box (Tags & Project URLs) */}
+        {/* Tags & Project URLs */}
         <div className='max-w-4xl w-full bg-orange-50/70 border border-orange-100 rounded-2xl p-6 md:p-8 mb-12 flex flex-col gap-8'>
           
           {/* Tags */}
           {tags.length > 0 && (
             <div className='flex flex-col gap-3'>
-              <span className='font-bold text-neutral-900 text-sm md:text-base'>Teknologi Terkait:</span>
+              <span className='font-bold text-neutral-900 text-sm md:text-base'>Tech Stack:</span>
               <div className='flex flex-wrap gap-3'>
                 {tags.map((tag, idx) => (
                   <span
@@ -125,9 +120,9 @@ export default async function ProductDetail({
             </div>
           )}
           
-          {/* Project URLs Dinamis */}
+          {/* Project URLs */}
           <div className='flex flex-col gap-3'>
-            <span className='font-bold text-neutral-900 text-sm md:text-base'>Tautan Project:</span>
+            <span className='font-bold text-neutral-900 text-sm md:text-base'>Project Links:</span>
             {projectUrls.length > 0 ? (
               <div className='flex flex-wrap gap-3'>
                 {projectUrls.map((item, idx) => (
@@ -143,7 +138,7 @@ export default async function ProductDetail({
                 ))}
               </div>
             ) : (
-              <span className='text-gray-500 italic text-sm'>Tidak ada tautan yang dilampirkan.</span>
+              <span className='text-gray-500 italic text-sm'>No links Attached.</span>
             )}
           </div>
 
@@ -153,10 +148,11 @@ export default async function ProductDetail({
         {developers.length > 0 && (
           <div className='max-w-4xl w-full grid grid-cols-1 md:grid-cols-[200px_1fr] lg:grid-cols-[250px_1fr] gap-8 items-start'>
             <h3 className='text-xl md:text-2xl font-bold text-neutral-900 mt-2'>
-              Developer Dibalik Project Ini
+              Project Developers
             </h3>
             
             <div className='flex flex-col gap-6'>
+
               {/* Developer List */}
               <ol className='flex flex-col gap-3 text-sm md:text-base font-semibold text-neutral-800 border-l-2 border-gray-100 pl-4 mt-2'>
                 {developers.map((dev: any, idx: number) => (

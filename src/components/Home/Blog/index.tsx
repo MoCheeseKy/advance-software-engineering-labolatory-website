@@ -19,11 +19,14 @@ export default function Blog() {
 
         if (response.ok) {
           setBlogs(result.data);
+
         } else {
-          console.error("Gagal mengambil data blog:", result.message);
+          console.error("Failed to get blog data:", result.message);
         }
+
       } catch (error) {
-        console.error("Terjadi kesalahan jaringan:", error);
+        console.error("Internal server error:", error);
+
       } finally {
         setLoading(false);
       }
@@ -50,7 +53,8 @@ export default function Blog() {
   return (
     <section className='w-full bg-white'>
       <Wrapper className='flex flex-col items-center'>
-        {/* Header Title (Sesuai desain asli) */}
+
+        {/* Header Title */}
         <div className='flex flex-col items-center text-center bg-white text-black mb-10'>
           <p className='text-[32px] font-semibold'>Our</p>
           <p className='text-primary text-[64px] font-bold'>Blogs</p>
@@ -60,6 +64,7 @@ export default function Blog() {
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <p className="text-gray-500 font-medium">Memuat artikel terbaru...</p>
           </div>
+
         ) : (
           <>
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full mb-10'>
@@ -92,7 +97,7 @@ export default function Blog() {
           </>
         )}
 
-        {/* More Blog Button (Sesuai desain asli, dibungkus Link agar bisa diklik) */}
+        {/* More Blog Button */}
         <Link href="/blog">
           <Button
             variant='solid'

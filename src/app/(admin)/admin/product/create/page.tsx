@@ -16,7 +16,6 @@ export default function CreateProductPage() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [projectUrls, setProjectUrls] = useState([{ label: 'Repository', url: '' }]);
 
-  // Refs untuk Rich Text Editor
   const editorRef = useRef<HTMLDivElement>(null);
   const editorImageInputRef = useRef<HTMLInputElement>(null);
 
@@ -66,7 +65,6 @@ export default function CreateProductPage() {
     setProjectUrls(newUrls);
   };
 
-  // --- Fungsi-fungsi Rich Text Editor ---
   const handleEditorInput = () => {
     if (editorRef.current) {
       setDescription(editorRef.current.innerHTML);
@@ -84,13 +82,19 @@ export default function CreateProductPage() {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
     let node: Node | null = sel.anchorNode;
+
     while (node && node !== editorRef.current) {
+
       if (node.nodeName === 'OL') {
+
+
         if (typeValue) {
           (node as HTMLOListElement).type = typeValue;
+
         } else {
           (node as HTMLOListElement).removeAttribute('type');
         }
+
         break;
       }
       node = node.parentNode;
@@ -108,33 +112,41 @@ export default function CreateProductPage() {
       case 'Quote':
         const sel = window.getSelection();
         let isQuote = false;
+
         if (sel && sel.rangeCount > 0) {
           let node = sel.anchorNode;
+
           while (node && node !== editorRef.current) {
             if (node.nodeName === 'BLOCKQUOTE') {
               isQuote = true;
               break;
             }
+
             node = node.parentNode;
           }
         }
         execCommand('formatBlock', isQuote ? 'DIV' : 'BLOCKQUOTE');
         break;
+
       case 'Number':
         execCommand('insertOrderedList');
         setListType(null); 
         break;
+        
       case 'Letter':
         execCommand('insertOrderedList');
         setListType('A'); 
         break;
+
       case 'Bullet':
         execCommand('insertUnorderedList');
         break;
+
       case 'Link':
         const promptUrl = window.prompt('Masukkan URL Link (contoh: https://google.com):');
         if (promptUrl) execCommand('createLink', promptUrl);
         break;
+
       case 'Image': editorImageInputRef.current?.click(); break;
       default: break;
     }
@@ -148,7 +160,6 @@ export default function CreateProductPage() {
         const formData = new FormData();
         formData.append('image', file);
 
-        // Jika endpoint upload image sama dengan yang ada di blog
         const res = await fetch('/api/admin/upload/image', {
           method: 'POST',
           body: formData,
@@ -157,14 +168,14 @@ export default function CreateProductPage() {
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.message || 'Gagal upload ke server');
+          throw new Error(data.message || 'Failed Upload Image');
         }
 
         execCommand('insertImage', data.imageUrl);
 
       } catch (err) {
-        console.error("Gagal membaca gambar:", err);
-        alert("Gagal memproses gambar.");
+        console.error("Failed Processing Image:", err);
+        alert("Failed Processing Image.");
       }
     }
    
@@ -172,7 +183,6 @@ export default function CreateProductPage() {
       editorImageInputRef.current.value = '';
     }
   };
-  // ----------------------------------------
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -207,7 +217,7 @@ export default function CreateProductPage() {
       router.refresh();
       
     } catch (err: any) {
-      setSaveError(err.message || 'Terjadi kesalahan saat menyimpan.');
+      setSaveError(err.message || 'Failed Saving Data');
       
     } finally {
       setSaving(false);
@@ -234,6 +244,7 @@ export default function CreateProductPage() {
 
       <form onSubmit={handleSave} className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
           {/* Main Info */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
@@ -251,7 +262,7 @@ export default function CreateProductPage() {
                 />
               </div>
 
-              {/* Rich Text Editor Description */}
+              {/* Rich Text Editor*/}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Description</label>
                 <div className="border border-gray-200 rounded-xl overflow-hidden">
@@ -310,7 +321,7 @@ export default function CreateProductPage() {
                   placeholder="e.g. Web App, React, Express (Comma separated)"
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium text-gray-900"
                 />
-                <p className="text-xs text-gray-400 mt-1.5">Pisahkan dengan koma.</p>
+                <p className="text-xs text-gray-400 mt-1.5">Separate it with comma</p>
               </div>
             </div>
 
@@ -412,6 +423,7 @@ export default function CreateProductPage() {
                         />
                       </div>
                     </div>
+
                     {projectUrls.length > 1 && (
                       <button type="button" onClick={() => handleRemoveUrl(idx)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors mt-1">
                         <FiTrash2 />
@@ -447,8 +459,8 @@ export default function CreateProductPage() {
               {imageFiles.length < 5 && (
                 <label className="w-full h-36 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-100 hover:border-primary transition-colors cursor-pointer text-center px-4">
                   <FiImage className="text-3xl mb-2" />
-                  <span className="text-sm font-medium">Klik untuk upload</span>
-                  <span className="text-xs mt-1">PNG, JPG, WEBP · Maks 5 foto</span>
+                  <span className="text-sm font-medium">Click to Upload</span>
+                  <span className="text-xs mt-1">PNG, JPG, WEBP · Max 5 Photos</span>
                   <input
                     type="file"
                     accept="image/png,image/jpeg,image/webp"

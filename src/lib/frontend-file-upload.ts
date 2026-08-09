@@ -66,13 +66,13 @@ export async function UploadBlog({ file, title, url, authors = [], texts = [] }:
         const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.message || "Gagal mengunggah blog");
+            throw new Error(result.message || "Failed to Upload Blog");
         }
 
         return result;
 
     } catch (error) {
-        console.error("Terjadi kesalahan saat proses kompresi/upload:", error);
+        console.error("Upload or Compression Error:", error);
         throw error; 
     }
 }
@@ -111,13 +111,13 @@ export async function UpdateBlog({ blogId, file, title, url, authors = [], texts
         const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.message || "Gagal mengupdate blog");
+            throw new Error(result.message || "Failed to Update Blog");
         }
 
         return result;
 
     } catch (error) {
-        console.error("Terjadi kesalahan saat update blog:", error);
+        console.error("Update Error:", error);
         throw error; 
     }
 }
@@ -185,7 +185,6 @@ export async function UpdateProduct({ productId, files = [], existingImages = []
     };
 
     try {
-        // Kompres dan tambahkan gambar-gambar baru (jika ada)
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const compressedImage = await imageCompression(file, options);

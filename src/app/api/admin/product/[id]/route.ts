@@ -12,10 +12,10 @@ async function deleteLocalFile(fileUrl: string) {
         if (!fileUrl || !fileUrl.startsWith('/uploads/')) return;
         const filePath = path.join(process.cwd(), 'public', fileUrl);
         await unlink(filePath);
-        console.log(`Berhasil menghapus file fisik product: ${filePath}`);
+        console.log(`Deleted File: ${filePath}`);
 
     } catch (error) {
-        console.error(`Gagal menghapus file ${fileUrl}:`, error);
+        console.error(`Failed Delete File ${fileUrl}:`, error);
     }
 }
 
@@ -56,7 +56,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         const { id } = await params;
         const id_product = Number(id);
 
-        // Ambil data lama
         const existingProduct = await prisma.product.findUnique({
             where: { id_product },
             select: { images: true }
@@ -137,12 +136,10 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
             return NextResponse.json({message: "Product tidak ditemukan"}, {status: 404});
         }
 
-        // Hapus Data dari DB
         const deletedProduct = await prisma.product.delete({
             where: { id_product }
         });
 
-        // Hapus SEMUA file gambar fisik project ini
         if (existingProduct.images && Array.isArray(existingProduct.images)) {
             for (const imgUrl of existingProduct.images) {
                 await deleteLocalFile(imgUrl);

@@ -44,7 +44,6 @@ export default function CreateBlogPage() {
     handleEditorInput(); 
   };
 
-  // Fungsi khusus untuk mengatur atribut type pada <ol> untuk List Huruf
   const setListType = (typeValue: string | null) => {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
@@ -71,7 +70,6 @@ export default function CreateBlogPage() {
       case 'H1': execCommand('formatBlock', 'H1'); break;
       case 'H2': execCommand('formatBlock', 'H2'); break;
       case 'Quote':
-        // Logika Toggle untuk Quote
         const sel = window.getSelection();
         let isQuote = false;
         if (sel && sel.rangeCount > 0) {
@@ -84,24 +82,28 @@ export default function CreateBlogPage() {
             node = node.parentNode;
           }
         }
-        // Jika sedang di dalam quote, kembalikan ke tulisan normal (DIV). Jika tidak, jadikan BLOCKQUOTE
         execCommand('formatBlock', isQuote ? 'DIV' : 'BLOCKQUOTE');
         break;
+
       case 'Number':
         execCommand('insertOrderedList');
-        setListType(null); // Pastikan tidak ada atribut huruf
+        setListType(null); 
         break;
+
       case 'Letter':
         execCommand('insertOrderedList');
-        setListType('A'); // Berikan tipe A agar menjadi A, B, C
+        setListType('A');
         break;
+
       case 'Bullet':
         execCommand('insertUnorderedList');
         break;
+
       case 'Link':
         const promptUrl = window.prompt('Masukkan URL Link (contoh: https://google.com):');
         if (promptUrl) execCommand('createLink', promptUrl);
         break;
+
       case 'Image': editorImageInputRef.current?.click(); break;
       default: break;
     }
@@ -123,14 +125,14 @@ export default function CreateBlogPage() {
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.message || 'Gagal upload ke server');
+          throw new Error(data.message || 'Failed Upload to Server');
         }
 
         execCommand('insertImage', data.imageUrl);
 
       } catch (err) {
-        console.error("Gagal membaca gambar:", err);
-        alert("Gagal memproses gambar.");
+        console.error("Failed Reading the Image:", err);
+        alert("Failed Processed the Image.");
       }
     }
    
@@ -145,13 +147,13 @@ export default function CreateBlogPage() {
     setError(null);
 
     if (!content || content.trim() === '<br>') {
-      setError("Content artikel tidak boleh kosong.");
+      setError("Article Content Missing.");
       setIsSubmitting(false);
       return;
     }
 
     if (!imageFile) {
-      setError("Cover image wajib diunggah.");
+      setError("Cover Image Missing.");
       setIsSubmitting(false);
       return;
     }
@@ -173,7 +175,7 @@ export default function CreateBlogPage() {
 
     } catch (err: any) {
       console.error('Save blog error:', err);
-      setError(err.message || 'Something went wrong while saving.');
+      setError(err.message || 'Error Saving the Blog.');
 
     } finally {
       setIsSubmitting(false);
@@ -285,7 +287,6 @@ export default function CreateBlogPage() {
               
               {/* Toolbar */}
               <div className="bg-gray-50 border-b border-gray-200 px-4 py-2 flex gap-2 overflow-x-auto">
-                {/* Tambahkan tombol Number, Letter, dan Bullet di sini */}
                 {['B', 'I', 'U', 'H1', 'H2', 'Quote', 'Number', 'Letter', 'Bullet', 'Link', 'Image'].map(tool => (
                   <button 
                     key={tool} 
@@ -313,7 +314,6 @@ export default function CreateBlogPage() {
                 ref={editorRef}
                 contentEditable
                 onInput={handleEditorInput}
-                // Tambahkan styling CSS Tailwind untuk List di dalam Editor
                 className="w-full h-96 p-4 focus:outline-none overflow-y-auto text-black bg-white 
                 [&_b]:font-bold [&_i]:italic [&_u]:underline 
                 [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:mt-2

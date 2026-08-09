@@ -13,10 +13,10 @@ export async function GET( request: Request, { params }: { params: Promise<{ id:
         });
 
         if (!blogDetail) {
-            return NextResponse.json({ message: "Artikel tidak ditemukan" }, { status: 404 });
+            return NextResponse.json({ message: "Article Not Found" }, { status: 404 });
         }
 
-        return NextResponse.json({ message: "Berhasil mengambil detail artikel", data: blogDetail }, { status: 200 });
+        return NextResponse.json({ message: "Article Found", data: blogDetail }, { status: 200 });
         
     } catch (error) {
         console.error("GET Detail Blog error:", error);
