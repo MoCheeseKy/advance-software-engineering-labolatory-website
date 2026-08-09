@@ -1,6 +1,8 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import Wrapper from '@/components/_shared/Wrapper';
 
 const formatDate = (dateString: string) => {
@@ -13,27 +15,62 @@ const formatDate = (dateString: string) => {
   });
 };
 
-export default async function BlogDetail({ params,}: {params: Promise<{ id: string }>;}) {
-  const resolvedParams = await params;
-  const { id } = resolvedParams;
+export default function BlogDetail() {
+  const params = useParams();
+  const id = params.id as string;
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-  
-  const res = await fetch(`${baseUrl}/api/blog/${id}`, {
-    cache: 'no-store' 
-  });
+  const [blog, setBlog] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  if (!res.ok) {
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchBlog = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/blog/${id}`, {
+          cache: 'no-store'
+        });
+
+        if (!res.ok) {
+          setError(true);
+          return;
+        }
+
+        const result = await res.json();
+        
+        if (!result.data) {
+          setError(true);
+          return;
+        }
+
+        setBlog(result.data);
+
+      } catch (err) {
+        console.error("Failed to get blog data:", err);
+        setError(true);
+
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBlog();
+  }, [id]);
+
+  if (error) {
     notFound(); 
   }
 
-  const result = await res.json();
-  const blog = result.data; 
-
-  if (!blog) {
-    notFound();
+  if (loading || !blog) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center bg-white">
+        <p className="text-gray-500 font-medium">Memuat artikel...</p>
+      </div>
+    );
   }
-
+  
   const imageUrl = (Array.isArray(blog.images) && blog.images.length > 0)
     ? blog.images[0]
     : (typeof blog.images === 'string' ? blog.images : 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=800');

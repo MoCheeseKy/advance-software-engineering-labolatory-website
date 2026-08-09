@@ -1,5 +1,7 @@
-import React from 'react';
-import { notFound } from 'next/navigation';
+'use client'
+
+import React, { useState, useEffect } from 'react';
+import { notFound, useParams } from 'next/navigation';
 import Wrapper from '@/components/_shared/Wrapper';
 import ImageCarousel from '@/components/_shared/ImageCarousel'; 
 
@@ -8,25 +10,59 @@ function extractText(texts: string[], prefix: string): string {
   return entry ? entry.slice(prefix.length + 1) : '';
 }
 
-export default async function ProductDetail({ params }: { params: Promise<{ id: string }>; }) {
-  const resolvedParams = await params;
-  const { id } = resolvedParams;
+export default function ProductDetail() {
+  const params = useParams();
+  const id = params.id as string;
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-  
-  const res = await fetch(`${baseUrl}/api/product/${id}`, {
-    cache: 'no-store' 
-  });
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  if (!res.ok) {
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/product/${id}`, {
+          cache: 'no-store' 
+        });
+
+        if (!res.ok) {
+          setError(true);
+          return;
+        }
+
+        const result = await res.json();
+        
+        if (!result.data) {
+          setError(true);
+          return;
+        }
+
+        setProduct(result.data);
+      } catch (err) {
+        console.error("Gagal mengambil data produk:", err);
+        setError(true);
+
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  if (error) {
     notFound(); 
   }
 
-  const result = await res.json();
-  const product = result.data; 
-
-  if (!product) {
-    notFound();
+  if (loading || !product) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center bg-white">
+        <p className="text-gray-500 font-medium">Memuat produk...</p>
+      </div>
+    );
   }
 
   const texts: string[] = product.texts ?? [];
@@ -42,11 +78,13 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
     });
 
   const legacyRepo = extractText(texts, 'repo');
+
   if (legacyRepo && projectUrls.length === 0) {
     projectUrls.push({ label: 'Repository', url: legacyRepo });
   }
 
   let imagesArray: string[] = [];
+
   if (Array.isArray(product.images) && product.images.length > 0) {
     imagesArray = product.images;
 
