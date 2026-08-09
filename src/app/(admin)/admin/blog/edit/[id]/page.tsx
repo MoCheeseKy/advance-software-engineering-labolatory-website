@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FiLoader, FiCheck, FiArrowLeft, FiImage } from 'react-icons/fi';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
+import { UpdateBlog } from '@/lib/frontend-file-upload'; 
 
 export default function EditBlogPage() {
   const router = useRouter();
@@ -25,7 +26,6 @@ export default function EditBlogPage() {
   const editorImageInputRef = useRef<HTMLInputElement>(null);
   const initialContentHtml = useRef<string>('');
 
-  // Fetch Data
   useEffect(() => {
     async function fetchSpecificBlog() {
       try {
@@ -44,28 +44,35 @@ export default function EditBlogPage() {
         setEditUrl(targetBlog.url);
         
         let contentString = '';
+
         if (Array.isArray(targetBlog.texts) && targetBlog.texts.length > 0) {
           contentString = targetBlog.texts.join('<br><br>');
+
         } else if (typeof targetBlog.texts === 'string') {
           contentString = targetBlog.texts;
         }
         
         initialContentHtml.current = contentString;
+
         if (editorRef.current) {
           editorRef.current.innerHTML = contentString;
         }
 
         let coverPreview = null;
+
         if (Array.isArray(targetBlog.images) && targetBlog.images.length > 0) {
           coverPreview = targetBlog.images[0];
+
         } else if (typeof targetBlog.images === 'string') {
           coverPreview = targetBlog.images;
         }
+
         setEditImagePreview(coverPreview);
 
       } catch (err: any) {
         console.error('Fetch specific blog error:', err);
         setError(err.message ?? 'Unable to fetch data.');
+
       } finally {
         setLoading(false);
       }
@@ -99,6 +106,27 @@ export default function EditBlogPage() {
     document.execCommand(command, false, value);
   };
 
+  const setListType = (typeValue: string | null) => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    let node: Node | null = sel.anchorNode;
+
+    while (node && node !== editorRef.current) {
+
+      if (node.nodeName === 'OL') {
+        if (typeValue) {
+          (node as HTMLOListElement).type = typeValue;
+
+        } else {
+          (node as HTMLOListElement).removeAttribute('type');
+        }
+
+        break;
+      }
+      node = node.parentNode;
+    }
+  };
+
   const handleFormat = (tool: string) => {
     switch (tool) {
       case 'B': execCommand('bold'); break;
@@ -106,11 +134,44 @@ export default function EditBlogPage() {
       case 'U': execCommand('underline'); break;
       case 'H1': execCommand('formatBlock', 'H1'); break;
       case 'H2': execCommand('formatBlock', 'H2'); break;
-      case 'Quote': execCommand('formatBlock', 'BLOCKQUOTE'); break;
+      case 'Quote': 
+        const sel = window.getSelection();
+        let isQuote = false;
+
+        if (sel && sel.rangeCount > 0) {
+          let node = sel.anchorNode;
+
+          while (node && node !== editorRef.current) {
+
+            if (node.nodeName === 'BLOCKQUOTE') {
+              isQuote = true;
+              break;
+            }
+            node = node.parentNode;
+          }
+        }
+        execCommand('formatBlock', isQuote ? 'DIV' : 'BLOCKQUOTE'); 
+        break;
+
+      case 'Number':
+        execCommand('insertOrderedList');
+        setListType(null);
+        break;
+
+      case 'Letter':
+        execCommand('insertOrderedList');
+        setListType('A'); 
+        break;
+
+      case 'Bullet':
+        execCommand('insertUnorderedList');
+        break;
+
       case 'Link':
         const url = window.prompt('Masukkan URL Link (contoh: https://google.com):');
         if (url) execCommand('createLink', url);
         break;
+
       case 'Image':
         editorImageInputRef.current?.click();
         break;
@@ -120,14 +181,17 @@ export default function EditBlogPage() {
 
   const handleEditorImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    
     if (file) {
       try {
         const base64Url = await toBase64(file);
         execCommand('insertImage', base64Url);
+
       } catch (err) {
-        alert("Gagal memproses gambar.");
+        alert("Failed to Process the Image.");
       }
     }
+
     if (editorImageInputRef.current) {
       editorImageInputRef.current.value = '';
     }
@@ -139,7 +203,7 @@ export default function EditBlogPage() {
     const finalContent = editorRef.current?.innerHTML || '';
 
     if (!finalContent || finalContent.trim() === '<br>' || finalContent.trim() === '') {
-      setActionError("Content artikel tidak boleh kosong.");
+      setActionError("Article Content Missing.");
       return;
     }
     
@@ -147,36 +211,24 @@ export default function EditBlogPage() {
     setActionError(null);
 
     try {
-      let imagesArray: string[] = [];
-      if (editImageFile) {
-        const base64Image = await toBase64(editImageFile);
-        imagesArray.push(base64Image);
-      } else if (editImagePreview && editImagePreview.startsWith('data:image')) {
-         imagesArray.push(editImagePreview); 
-      } else if (editImagePreview) {
-         imagesArray.push(editImagePreview);
-      }
+      const formattedAuthors = editAuthors.split(',').map(a => a.trim()).filter(a => a);
+      const formattedUrl = editUrl || editTitle.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
 
-      const body = {
+      const isKeepingOldImage = !editImageFile;
+
+      await UpdateBlog({
+        blogId: blogId,
+        file: editImageFile, 
         title: editTitle,
-        url: editUrl || editTitle.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-'),
-        authors: editAuthors.split(',').map(a => a.trim()).filter(a => a),
-        texts: [finalContent], 
-        images: imagesArray,
-      };
-
-      const res = await fetch(`/api/admin/blog/${blogId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body),
+        url: formattedUrl,
+        authors: formattedAuthors,
+        texts: [finalContent],
+        keepOldImage: isKeepingOldImage
       });
-      
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message ?? 'Update failed');
       
       router.push('/admin/blog');
       router.refresh();
+
     } catch (err: any) {
       setActionError(err.message ?? 'Update failed.');
       setActionLoading(false);
@@ -240,7 +292,7 @@ export default function EditBlogPage() {
             />
           </div>
 
-          {/* URL*/}
+          {/* URL & Authors */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">URL Slug</label>
@@ -253,7 +305,6 @@ export default function EditBlogPage() {
               />
             </div>
 
-            {/* Authors */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Authors (Comma separated)</label>
               <input
@@ -292,7 +343,7 @@ export default function EditBlogPage() {
             <label className="block text-sm font-bold text-gray-700 mb-2">Content</label>
             <div className="border border-gray-200 rounded-xl overflow-hidden">
               <div className="bg-gray-50 border-b border-gray-200 px-4 py-2 flex gap-2 overflow-x-auto">
-                {['B', 'I', 'U', 'H1', 'H2', 'Quote', 'Link', 'Image'].map(tool => (
+                {['B', 'I', 'U', 'H1', 'H2', 'Quote', 'Number', 'Letter', 'Bullet', 'Link', 'Image'].map(tool => (
                   <button 
                     key={tool} 
                     type="button" 
@@ -300,7 +351,7 @@ export default function EditBlogPage() {
                       e.preventDefault();
                       handleFormat(tool);
                     }}
-                    className="px-3 py-1 text-sm font-semibold text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                    className="px-3 py-1 text-sm font-semibold text-gray-600 hover:bg-gray-200 rounded transition-colors whitespace-nowrap"
                   >
                     {tool}
                   </button>
@@ -326,7 +377,11 @@ export default function EditBlogPage() {
                 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-3 [&_h2]:mt-2
                 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-400 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:my-4 [&_blockquote]:text-gray-600
                 [&_a]:text-blue-600 [&_a]:underline
-                [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-4"
+                [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-4
+                [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:my-2
+                [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:my-2
+                [&_ol[type=A]]:list-[upper-alpha]
+                [&_li]:mb-1"
               />
             </div>
           </div>

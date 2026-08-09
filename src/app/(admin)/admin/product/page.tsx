@@ -4,12 +4,13 @@ import { FiEdit2, FiTrash2, FiPlus, FiSearch, FiLoader, FiX } from 'react-icons/
 import Link from 'next/link';
 
 interface Developer { name: string; role: string; }
+interface ProjectUrl { label: string; url: string; }
 
 interface Product {
   id: number;
   name: string;
   group: string;
-  repo: string;
+  urls: ProjectUrl[];
   description: string;
   tags: string[];
   developers: Developer[];
@@ -35,11 +36,24 @@ function mapProduct(p: any): Product {
     .filter((t: string) => t.startsWith('tag:'))
     .map((t: string) => t.slice(4));
 
+  const urls: ProjectUrl[] = texts
+    .filter((t: string) => t.startsWith('url|'))
+    .map((t: string) => {
+      const parts = t.split('|');
+      return { label: parts[1] || 'Link', url: parts[2] || '#' };
+    });
+
+  const legacyRepo = extractText(texts, 'repo');
+
+  if (legacyRepo && urls.length === 0) {
+    urls.push({ label: 'Repository', url: legacyRepo });
+  }
+
   return {
     id:          p.id_product,
     name:        p.name,
     group:       extractText(texts, 'group'),
-    repo:        extractText(texts, 'repo'),
+    urls:        urls,
     description: extractText(texts, 'desc'),
     tags,
     developers,
@@ -68,11 +82,12 @@ function DeleteModal({ product, onClose, onDeleted }: DeleteModalProps) {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message ?? 'Gagal menghapus project');
+      if (!res.ok) throw new Error(data.message ?? 'Failed Delete The Project');
 
       onDeleted(product.id);
+
     } catch (err: any) {
-      setDeleteError(err.message || 'Terjadi kesalahan saat menghapus.');
+      setDeleteError(err.message || 'Delete Error');
       setDeleting(false);
     }
   };
@@ -100,10 +115,9 @@ function DeleteModal({ product, onClose, onDeleted }: DeleteModalProps) {
           <div className="bg-red-50 rounded-xl p-4 flex gap-3 items-start">
             <span className="text-red-500 text-xl mt-0.5">⚠️</span>
             <div>
-              <p className="text-sm font-semibold text-red-700">Tindakan ini tidak bisa dibatalkan.</p>
+              <p className="text-sm font-semibold text-red-700">This Action Can't be Cancelled</p>
               <p className="text-sm text-red-600 mt-1">
-                Project <span className="font-bold">&ldquo;{product.name}&rdquo;</span> akan dihapus permanen
-                beserta semua data yang terkait.
+                Project <span className="font-bold">&ldquo;{product.name}&rdquo;</span> Will Be Permanently Deleted
               </p>
             </div>
           </div>
@@ -146,10 +160,13 @@ export default function AdminProductPage() {
         setError(null);
         const res  = await fetch('/api/admin/product', { credentials: 'include' });
         const data = await res.json();
+
         if (!res.ok) throw new Error(data.message ?? 'Failed to fetch products');
         setProducts((data.data || []).map(mapProduct));
+
       } catch (err: any) {
         setError(err.message ?? 'Unable to reach the server.');
+
       } finally {
         setLoading(false);
       }
@@ -227,7 +244,7 @@ export default function AdminProductPage() {
                     <th className="p-4 font-semibold uppercase tracking-wider text-xs">Project Name</th>
                     <th className="p-4 font-semibold uppercase tracking-wider text-xs">Group</th>
                     <th className="p-4 font-semibold uppercase tracking-wider text-xs">Technologies</th>
-                    <th className="p-4 font-semibold uppercase tracking-wider text-xs">Repository</th>
+                    <th className="p-4 font-semibold uppercase tracking-wider text-xs">Project URLs</th>
                     <th className="p-4 font-semibold uppercase tracking-wider text-xs text-right">Actions</th>
                   </tr>
                 </thead>
@@ -257,22 +274,27 @@ export default function AdminProductPage() {
                           )}
                         </td>
                         <td className="p-4 text-sm">
-                          {product.repo ? (
-                            <a
-                              href={product.repo}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline truncate max-w-[160px] block"
-                            >
-                              {product.repo}
-                            </a>
+                          {product.urls && product.urls.length > 0 ? (
+                            <div className="flex flex-col gap-1.5">
+                              {product.urls.map((u, idx) => (
+                                <a
+                                  key={idx}
+                                  href={u.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline truncate max-w-[160px] block font-medium"
+                                  title={u.url}
+                                >
+                                  {u.label}
+                                </a>
+                              ))}
+                            </div>
                           ) : (
                             <span className="text-gray-400">-</span>
                           )}
                         </td>
                         <td className="p-4 text-right">
                           <div className="flex justify-end gap-2">
-                            {/* Tombol Edit diubah menjadi Link ke halaman baru */}
                             <Link
                               href={`/admin/product/edit/${product.id}`}
                               className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors border border-transparent hover:border-blue-200"
@@ -296,7 +318,7 @@ export default function AdminProductPage() {
                       <td colSpan={5} className="p-8 text-center text-gray-500 font-medium">
                         {search
                           ? `No projects found matching "${search}"`
-                          : 'Belum ada project. Tambahkan project baru!'
+                          : 'No Project Found'
                         }
                       </td>
                     </tr>
