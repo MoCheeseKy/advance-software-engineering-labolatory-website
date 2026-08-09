@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useState, useEffect, useRef } from 'react';
 import { FiLoader, FiX, FiSave, FiImage, FiArrowLeft, FiPlus, FiTrash2, FiLink } from 'react-icons/fi';
 import Link from 'next/link';
@@ -72,7 +73,6 @@ export default function EditProductPage() {
 
   const [name,        setName]        = useState('');
   const [group,       setGroup]       = useState('');
-  const [description, setDescription] = useState('');
   const [tagsInput,   setTagsInput]   = useState('');
   const [developers,  setDevelopers]  = useState<Developer[]>([{ name: '', role: '' }]);
   const [projectUrls, setProjectUrls] = useState<ProjectUrl[]>([{ label: 'Repository', url: '' }]);
@@ -86,6 +86,7 @@ export default function EditProductPage() {
 
   const editorRef = useRef<HTMLDivElement>(null);
   const editorImageInputRef = useRef<HTMLInputElement>(null);
+  const initialContentHtml = useRef<string>(''); 
 
   useEffect(() => {
     async function fetchProduct() {
@@ -100,12 +101,12 @@ export default function EditProductPage() {
         const p = mapProduct(data.data);
         setName(p.name);
         setGroup(p.group);
-        setDescription(p.description);
         setTagsInput(p.tags.join(', '));
         setDevelopers(p.developers.length > 0 ? p.developers : [{ name: '', role: '' }]);
         setProjectUrls(p.urls.length > 0 ? p.urls : [{ label: 'Repository', url: '' }]);
         setExistingImages(p.images);
 
+        initialContentHtml.current = p.description;
         if (editorRef.current) {
           editorRef.current.innerHTML = p.description;
         }
@@ -161,27 +162,23 @@ export default function EditProductPage() {
     setProjectUrls(newUrls);
   };
 
-  const handleEditorInput = () => {
-    if (editorRef.current) {
-      setDescription(editorRef.current.innerHTML);
-    }
-  };
-
   const execCommand = (command: string, value: string | undefined = undefined) => {
     if (!editorRef.current) return;
     editorRef.current.focus();
     document.execCommand(command, false, value);
-    handleEditorInput(); 
   };
 
   const setListType = (typeValue: string | null) => {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
     let node: Node | null = sel.anchorNode;
+
     while (node && node !== editorRef.current) {
+
       if (node.nodeName === 'OL') {
         if (typeValue) {
           (node as HTMLOListElement).type = typeValue;
+
         } else {
           (node as HTMLOListElement).removeAttribute('type');
         }
@@ -189,7 +186,6 @@ export default function EditProductPage() {
       }
       node = node.parentNode;
     }
-    handleEditorInput();
   };
 
   const handleFormat = (tool: string) => {
@@ -202,8 +198,10 @@ export default function EditProductPage() {
       case 'Quote':
         const sel = window.getSelection();
         let isQuote = false;
+
         if (sel && sel.rangeCount > 0) {
           let node = sel.anchorNode;
+
           while (node && node !== editorRef.current) {
             if (node.nodeName === 'BLOCKQUOTE') {
               isQuote = true;
@@ -273,6 +271,8 @@ export default function EditProductPage() {
     setSaving(true);
     setSaveError(null);
 
+    const finalDescription = editorRef.current?.innerHTML || '';
+
     try {
       const formattedDevelopers = developers.map(d => `${d.name}${d.role ? ` - ${d.role}` : ''}`);
       
@@ -283,7 +283,7 @@ export default function EditProductPage() {
       const formattedTexts = [
         ...(group ? [`group:${group}`] : []),
         ...formattedUrls,
-        ...(description ? [`desc:${description}`] : []),
+        ...(finalDescription ? [`desc:${finalDescription}`] : []),
         ...tagsInput.split(',').map(t => t.trim()).filter(Boolean).map(t => `tag:${t}`),
       ];
 
@@ -301,6 +301,7 @@ export default function EditProductPage() {
 
     } catch (err: any) {
       setSaveError(err.message || 'Error Saving Data.');
+
     } finally {
       setSaving(false);
     }
@@ -404,7 +405,7 @@ export default function EditProductPage() {
                     ref={editorRef}
                     contentEditable
                     suppressContentEditableWarning
-                    onInput={handleEditorInput}
+                    dangerouslySetInnerHTML={{ __html: initialContentHtml.current }}
                     className="w-full h-64 p-4 focus:outline-none overflow-y-auto text-black bg-white 
                     [&_b]:font-bold [&_i]:italic [&_u]:underline 
                     [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:mt-2
