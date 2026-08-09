@@ -9,8 +9,7 @@ export default function CreateBlogPage() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
-  
-  // State baru untuk Authors dan URL Slug
+
   const [authors, setAuthors] = useState('');
   const [url, setUrl] = useState('');
   const [content, setContent] = useState('');
@@ -45,6 +44,25 @@ export default function CreateBlogPage() {
     handleEditorInput(); 
   };
 
+  // Fungsi khusus untuk mengatur atribut type pada <ol> untuk List Huruf
+  const setListType = (typeValue: string | null) => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    let node: Node | null = sel.anchorNode;
+    while (node && node !== editorRef.current) {
+      if (node.nodeName === 'OL') {
+        if (typeValue) {
+          (node as HTMLOListElement).type = typeValue;
+        } else {
+          (node as HTMLOListElement).removeAttribute('type');
+        }
+        break;
+      }
+      node = node.parentNode;
+    }
+    handleEditorInput();
+  };
+
   const handleFormat = (tool: string) => {
     switch (tool) {
       case 'B': execCommand('bold'); break;
@@ -52,7 +70,34 @@ export default function CreateBlogPage() {
       case 'U': execCommand('underline'); break;
       case 'H1': execCommand('formatBlock', 'H1'); break;
       case 'H2': execCommand('formatBlock', 'H2'); break;
-      case 'Quote': execCommand('formatBlock', 'BLOCKQUOTE'); break;
+      case 'Quote':
+        // Logika Toggle untuk Quote
+        const sel = window.getSelection();
+        let isQuote = false;
+        if (sel && sel.rangeCount > 0) {
+          let node = sel.anchorNode;
+          while (node && node !== editorRef.current) {
+            if (node.nodeName === 'BLOCKQUOTE') {
+              isQuote = true;
+              break;
+            }
+            node = node.parentNode;
+          }
+        }
+        // Jika sedang di dalam quote, kembalikan ke tulisan normal (DIV). Jika tidak, jadikan BLOCKQUOTE
+        execCommand('formatBlock', isQuote ? 'DIV' : 'BLOCKQUOTE');
+        break;
+      case 'Number':
+        execCommand('insertOrderedList');
+        setListType(null); // Pastikan tidak ada atribut huruf
+        break;
+      case 'Letter':
+        execCommand('insertOrderedList');
+        setListType('A'); // Berikan tipe A agar menjadi A, B, C
+        break;
+      case 'Bullet':
+        execCommand('insertUnorderedList');
+        break;
       case 'Link':
         const promptUrl = window.prompt('Masukkan URL Link (contoh: https://google.com):');
         if (promptUrl) execCommand('createLink', promptUrl);
@@ -112,17 +157,14 @@ export default function CreateBlogPage() {
     }
 
     try {
-      // Format authors: pisahkan dengan koma, hilangkan spasi kosong
       const formattedAuthors = authors.split(',').map(a => a.trim()).filter(a => a);
-      
-      // Jika url kosong, otomatis buat slug dari title
       const formattedUrl = url || title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
 
       await UploadBlog({
         file: imageFile,         
         title: title,            
         url: formattedUrl,       
-        authors: formattedAuthors.length > 0 ? formattedAuthors : ["Admin"], // Fallback ke "Admin" jika kosong
+        authors: formattedAuthors.length > 0 ? formattedAuthors : ["Admin"], 
         texts: [content]         
       });
 
@@ -243,7 +285,8 @@ export default function CreateBlogPage() {
               
               {/* Toolbar */}
               <div className="bg-gray-50 border-b border-gray-200 px-4 py-2 flex gap-2 overflow-x-auto">
-                {['B', 'I', 'U', 'H1', 'H2', 'Quote', 'Link', 'Image'].map(tool => (
+                {/* Tambahkan tombol Number, Letter, dan Bullet di sini */}
+                {['B', 'I', 'U', 'H1', 'H2', 'Quote', 'Number', 'Letter', 'Bullet', 'Link', 'Image'].map(tool => (
                   <button 
                     key={tool} 
                     type="button" 
@@ -251,7 +294,7 @@ export default function CreateBlogPage() {
                       e.preventDefault();
                       handleFormat(tool);
                     }}
-                    className="px-3 py-1 text-sm font-semibold text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                    className="px-3 py-1 text-sm font-semibold text-gray-600 hover:bg-gray-200 rounded transition-colors whitespace-nowrap"
                   >
                     {tool}
                   </button>
@@ -270,13 +313,18 @@ export default function CreateBlogPage() {
                 ref={editorRef}
                 contentEditable
                 onInput={handleEditorInput}
+                // Tambahkan styling CSS Tailwind untuk List di dalam Editor
                 className="w-full h-96 p-4 focus:outline-none overflow-y-auto text-black bg-white 
                 [&_b]:font-bold [&_i]:italic [&_u]:underline 
                 [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:mt-2
                 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-3 [&_h2]:mt-2
                 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-400 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:my-4 [&_blockquote]:text-gray-600
                 [&_a]:text-blue-600 [&_a]:underline
-                [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-4"
+                [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-4
+                [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:my-2
+                [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:my-2
+                [&_ol[type=A]]:list-[upper-alpha]
+                [&_li]:mb-1"
               />
             </div>
           </div>
