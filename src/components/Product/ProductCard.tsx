@@ -1,6 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import Button from '@/components/_shared/Button';
 
 export interface ProductCardProps {
   id: number;
@@ -10,41 +11,40 @@ export interface ProductCardProps {
   tags: string[];
 }
 
-export default function ProductCard({
-  id,
-  image,
-  title,
-  description,
-  tags,
-}: ProductCardProps) {
+export default function ProductCard({ id, image, title, description, tags }: ProductCardProps) {
   return (
-    <div className='flex flex-col bg-white rounded-[24px] overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-shadow duration-300 w-full border border-gray-100/50'>
+    <div className='flex flex-col bg-white rounded-[32px] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 h-full'>
+      
       {/* Image Container */}
-      <div className='relative w-full aspect-[288/140] bg-white'>
+      <div className='relative h-[240px] w-full shrink-0'>
         <Image
           src={image}
           alt={title}
           fill
-          className='object-cover rounded-t-[24px]'
+          className='object-cover rounded-t-[30px] rounded-bl-[32px]'
           sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
         />
       </div>
 
       {/* Content Container */}
-      <div className='flex flex-col p-5 md:p-6 flex-grow bg-white'>
-        <h3 className='text-primary font-bold text-lg md:text-xl mb-2'>
+      <div className='flex flex-col flex-grow p-8 pt-10 md:p-9 md:pt-11'>
+        
+        {/* Title */}
+        <h3 className='text-black font-extrabold text-lg md:text-xl leading-snug mb-4 uppercase tracking-wide line-clamp-2'>
           {title}
         </h3>
-        <p className='text-black text-xs md:text-sm leading-relaxed mb-4 flex-grow font-semibold'>
+
+        {/* Description */}
+        <p className='text-[#8A8A8A] text-xs md:text-[13px] font-medium leading-relaxed mb-6 tracking-wide line-clamp-3 text-justify'>
           {description}
         </p>
 
         {/* Tags */}
-        <div className='flex flex-wrap gap-2 mb-6'>
+        <div className='flex flex-wrap gap-2 mb-8'>
           {tags.map((tag, index) => (
             <span
               key={index}
-              className='border border-gray-500 text-black text-[11px] md:text-xs font-bold px-4 py-1.5 rounded-lg'
+              className='px-3 py-1 bg-orange-50 text-primary border border-orange-100 rounded-full text-[11px] font-bold uppercase tracking-wider'
             >
               {tag}
             </span>
@@ -52,11 +52,17 @@ export default function ProductCard({
         </div>
 
         {/* Button */}
-        <Link href={`/product/${id}`} className='w-full'>
-          <button className='w-full border-2 border-primary text-primary hover:bg-primary hover:text-white transition-colors duration-300 font-bold text-xs md:text-sm py-2.5 rounded-full'>
-            Ketahui Lebih Lanjut
-          </button>
-        </Link>
+        <div className='mt-auto flex justify-center'>
+          <Link href={`/product/${id}`} className='w-fit'>
+            <Button
+              variant='outline'
+              colorType='primary'
+              className='w-full !rounded-full px-18 py-0.5 text-sm font-bold border-2 border-primary hover:bg-primary hover:text-white transition-all duration-200'
+            >
+              View Detail
+            </Button>
+          </Link>
+        </div>
       </div>
     </div>
   );

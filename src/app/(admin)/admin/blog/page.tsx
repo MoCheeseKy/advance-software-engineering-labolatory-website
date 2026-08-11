@@ -30,7 +30,6 @@ export default function AdminBlogPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // Fetch data 
   useEffect(() => {
     async function fetchBlogs() {
       try {
@@ -42,9 +41,11 @@ export default function AdminBlogPage() {
         
         if (!res.ok) throw new Error(data.message ?? 'Failed to fetch blogs');
         setBlogs(data.data ?? []);
+
       } catch (err: any) {
         console.error('Fetch blogs error:', err);
         setError(err.message ?? 'Unable to reach the server.');
+
       } finally {
         setLoading(false);
       }
@@ -69,23 +70,26 @@ export default function AdminBlogPage() {
     setActionError(null);
   }
 
-  // Handle Delete
   async function handleDelete() {
     if (!modal.blog) return;
     setActionLoading(true);
     setActionError(null);
+    
     try {
       const res = await fetch(`/api/admin/blog/${modal.blog.id_blog}`, {
         method: 'DELETE',
         credentials: 'include',
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.message ?? 'Delete failed');
       
       setBlogs(prev => prev.filter(b => b.id_blog !== modal.blog!.id_blog));
       closeModal();
+
     } catch (err: any) {
       setActionError(err.message ?? 'Delete failed.');
+      
     } finally {
       setActionLoading(false);
     }

@@ -3,11 +3,15 @@ import React, { useState, useRef } from 'react';
 import { FiArrowLeft, FiImage, FiSave, FiLoader } from 'react-icons/fi';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { UploadBlog } from '@/lib/frontend-file-upload'; 
 
 export default function CreateBlogPage() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
+
+  const [authors, setAuthors] = useState('');
+  const [url, setUrl] = useState('');
   const [content, setContent] = useState('');
   
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -18,15 +22,6 @@ export default function CreateBlogPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const toBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-  };
 
   const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -49,47 +44,95 @@ export default function CreateBlogPage() {
     handleEditorInput(); 
   };
 
+  const setListType = (typeValue: string | null) => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    let node: Node | null = sel.anchorNode;
+    while (node && node !== editorRef.current) {
+      if (node.nodeName === 'OL') {
+        if (typeValue) {
+          (node as HTMLOListElement).type = typeValue;
+        } else {
+          (node as HTMLOListElement).removeAttribute('type');
+        }
+        break;
+      }
+      node = node.parentNode;
+    }
+    handleEditorInput();
+  };
+
   const handleFormat = (tool: string) => {
     switch (tool) {
-      case 'B':
-        execCommand('bold');
-        break;
-      case 'I':
-        execCommand('italic');
-        break;
-      case 'U':
-        execCommand('underline');
-        break;
-      case 'H1':
-        execCommand('formatBlock', 'H1');
-        break;
-      case 'H2':
-        execCommand('formatBlock', 'H2');
-        break;
+      case 'B': execCommand('bold'); break;
+      case 'I': execCommand('italic'); break;
+      case 'U': execCommand('underline'); break;
+      case 'H1': execCommand('formatBlock', 'H1'); break;
+      case 'H2': execCommand('formatBlock', 'H2'); break;
       case 'Quote':
-        execCommand('formatBlock', 'BLOCKQUOTE');
+        const sel = window.getSelection();
+        let isQuote = false;
+        if (sel && sel.rangeCount > 0) {
+          let node = sel.anchorNode;
+          while (node && node !== editorRef.current) {
+            if (node.nodeName === 'BLOCKQUOTE') {
+              isQuote = true;
+              break;
+            }
+            node = node.parentNode;
+          }
+        }
+        execCommand('formatBlock', isQuote ? 'DIV' : 'BLOCKQUOTE');
         break;
+
+      case 'Number':
+        execCommand('insertOrderedList');
+        setListType(null); 
+        break;
+
+      case 'Letter':
+        execCommand('insertOrderedList');
+        setListType('A');
+        break;
+
+      case 'Bullet':
+        execCommand('insertUnorderedList');
+        break;
+
       case 'Link':
-        const url = window.prompt('Masukkan URL Link (contoh: https://google.com):');
-        if (url) execCommand('createLink', url);
+        const promptUrl = window.prompt('Masukkan URL Link (contoh: https://google.com):');
+        if (promptUrl) execCommand('createLink', promptUrl);
         break;
-      case 'Image':
-        editorImageInputRef.current?.click();
-        break;
-      default:
-        break;
+
+      case 'Image': editorImageInputRef.current?.click(); break;
+      default: break;
     }
   };
 
   const handleEditorImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (file) {
       try {
-        const base64Url = await toBase64(file);
-        execCommand('insertImage', base64Url);
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const res = await fetch('/api/admin/upload/image', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.message || 'Failed Upload to Server');
+        }
+
+        execCommand('insertImage', data.imageUrl);
+
       } catch (err) {
-        console.error("Gagal membaca gambar:", err);
-        alert("Gagal memproses gambar.");
+        console.error("Failed Reading the Image:", err);
+        alert("Failed Processed the Image.");
       }
     }
    
@@ -104,53 +147,35 @@ export default function CreateBlogPage() {
     setError(null);
 
     if (!content || content.trim() === '<br>') {
-      setError("Content artikel tidak boleh kosong.");
+      setError("Article Content Missing.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!imageFile) {
+      setError("Cover Image Missing.");
       setIsSubmitting(false);
       return;
     }
 
     try {
-      const urlSlug = title
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, '-') || 'new-blog-post';
+      const formattedAuthors = authors.split(',').map(a => a.trim()).filter(a => a);
+      const formattedUrl = url || title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
 
-      let imagesArray: string[] = [];
-
-      if (imageFile) {
-        const base64Image = await toBase64(imageFile);
-        imagesArray.push(base64Image);
-      }
-
-      const payload = {
-        title: title,
-        url: urlSlug,
-        authors: ["Admin"], 
-        texts: [content], 
-        images: imagesArray, 
-      };
-
-      const res = await fetch('/api/admin/blog', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(payload),
+      await UploadBlog({
+        file: imageFile,         
+        title: title,            
+        url: formattedUrl,       
+        authors: formattedAuthors.length > 0 ? formattedAuthors : ["Admin"], 
+        texts: [content]         
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to create blog post');
-      }
 
       router.push('/admin/blog');
       router.refresh(); 
 
     } catch (err: any) {
       console.error('Save blog error:', err);
-      setError(err.message || 'Something went wrong while saving.');
+      setError(err.message || 'Error Saving the Blog.');
 
     } finally {
       setIsSubmitting(false);
@@ -178,7 +203,7 @@ export default function CreateBlogPage() {
       <form onSubmit={handleSave} className="space-y-6">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
 
-          {/* Title */}
+          {/* Title */} 
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Post Title</label>
             <input
@@ -189,6 +214,31 @@ export default function CreateBlogPage() {
               placeholder="e.g. Introduction to Software Engineering..."
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium text-black"
             />
+          </div>
+
+          {/* URL & Authors Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">URL Slug (Opsional)</label>
+              <input
+                type="text"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="e.g. my-new-blog-post"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium text-black"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Authors (Pisahkan dengan koma)</label>
+              <input
+                type="text"
+                value={authors}
+                onChange={(e) => setAuthors(e.target.value)}
+                placeholder="e.g. John Doe, Jane Smith"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium text-black"
+              />
+            </div>
           </div>
 
           {/* Category */}
@@ -237,7 +287,7 @@ export default function CreateBlogPage() {
               
               {/* Toolbar */}
               <div className="bg-gray-50 border-b border-gray-200 px-4 py-2 flex gap-2 overflow-x-auto">
-                {['B', 'I', 'U', 'H1', 'H2', 'Quote', 'Link', 'Image'].map(tool => (
+                {['B', 'I', 'U', 'H1', 'H2', 'Quote', 'Number', 'Letter', 'Bullet', 'Link', 'Image'].map(tool => (
                   <button 
                     key={tool} 
                     type="button" 
@@ -245,7 +295,7 @@ export default function CreateBlogPage() {
                       e.preventDefault();
                       handleFormat(tool);
                     }}
-                    className="px-3 py-1 text-sm font-semibold text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                    className="px-3 py-1 text-sm font-semibold text-gray-600 hover:bg-gray-200 rounded transition-colors whitespace-nowrap"
                   >
                     {tool}
                   </button>
@@ -270,7 +320,11 @@ export default function CreateBlogPage() {
                 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-3 [&_h2]:mt-2
                 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-400 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:my-4 [&_blockquote]:text-gray-600
                 [&_a]:text-blue-600 [&_a]:underline
-                [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-4"
+                [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-4
+                [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:my-2
+                [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:my-2
+                [&_ol[type=A]]:list-[upper-alpha]
+                [&_li]:mb-1"
               />
             </div>
           </div>

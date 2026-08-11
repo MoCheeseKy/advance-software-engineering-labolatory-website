@@ -13,10 +13,11 @@ export async function GET( request: Request,{ params }: { params: Promise<{ id: 
         });
 
         if (!productDetail) {
-            return NextResponse.json({ message: "Produk tidak ditemukan" }, { status: 404 });
+            return NextResponse.json({ message: "Produk Not Found" }, { status: 404 });
         }
 
-        return NextResponse.json({ message: "Berhasil mengambil detail produk", data: productDetail }, { status: 200 });
+        return NextResponse.json({ message: "Product Found", data: productDetail }, { status: 200 });
+
     } catch (error) {
         console.error("GET Detail Product error:", error);
         return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });

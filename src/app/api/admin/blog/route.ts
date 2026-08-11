@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
-
+import { saveFileToLocal } from '@/lib/backend-file-upload'; // Import dari Helper Backend
 
 // GET function to fetch all blog posts
 export async function GET(request: Request) {
@@ -73,12 +73,25 @@ export async function POST(request: Request) {
             return NextResponse.json({message: "Invalid or expired token"}, {status: 401});
         }
 
-        // Extract admin from session
         const id_admin = sessionData.id;
+        const formData = await request.formData();
+        
+        const title = formData.get('title') as string;
+        const url = formData.get('url') as string;
+        
+        const authorsString = formData.get('authors') as string;
+        const textsString = formData.get('texts') as string;
+        
+        const authors = authorsString ? JSON.parse(authorsString) : [];
+        const texts = textsString ? JSON.parse(textsString) : [];
 
-        // Data extraction and validation
-        const body = await request.json();
-        const { title, authors, url, texts, images } = body;
+        const imageFile = formData.get('images') as File | null;
+        let imagesArray: string[] = [];
+
+        if (imageFile) {
+            const imageUrl = await saveFileToLocal(imageFile);
+            imagesArray.push(imageUrl);
+        }
 
         if (!title || !url) {
             return NextResponse.json({message: "Missing required fields"}, {status: 400});
@@ -88,10 +101,10 @@ export async function POST(request: Request) {
             data: {
                 id_admin: Number(id_admin),
                 title,
-                authors: authors || [],
+                authors,
                 url,
-                texts: texts || [],
-                images: images || [],
+                texts,
+                images: imagesArray, 
             }
         });
 
